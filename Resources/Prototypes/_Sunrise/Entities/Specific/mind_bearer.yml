@@ -1,0 +1,27 @@
+- type: entity
+  id: MindBearer
+  name: mind bearer
+  description: A storage device for minds.
+  parent: BaseItem
+  suffix: Empty
+  components:
+  - type: ContainerComp
+    proto: AiHeldIntellicard
+    container: station_ai_mind_slot
+  - type: Sprite
+    sprite: Objects/Devices/ai_card.rsi
+    layers:
+    - state: base
+    - state: full
+      map: ["unshaded"]
+      shader: unshaded
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      enum.StationAiVisualLayers.Icon:
+        unshaded:
+          Empty: { state: empty }
+          Occupied: { state: full }
+          Rebooting: { state: dead }
+          Dead: { state: dead }
+  - type: MindBearer
