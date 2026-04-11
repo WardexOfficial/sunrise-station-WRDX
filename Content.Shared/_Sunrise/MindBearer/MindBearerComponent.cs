@@ -4,10 +4,6 @@ using Robust.Shared.GameStates;
 
 namespace Content.Shared._Sunrise.MindBearer;
 
-/// <summary>
-/// Данный компонент используется исключительно в целях пометки.
-/// </summary>
-
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 public sealed partial class MindBearerComponent : Component
 {

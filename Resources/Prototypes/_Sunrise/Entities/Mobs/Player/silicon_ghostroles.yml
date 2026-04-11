@@ -63,7 +63,7 @@
   components:
   - type: GhostRole
     name: ghost-role-information-syndicate-saboteur-cyborg-name
-    description: ghost-role-information-syndicate-saboteur-cyborg-name
+    description: ghost-role-information-syndicate-saboteur-cyborg-description
     rules: ghost-role-information-silicon-rules
     raffle:
       settings: default

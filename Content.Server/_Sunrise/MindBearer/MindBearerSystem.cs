@@ -8,7 +8,6 @@ using Content.Shared.Popups;
 using Content.Server.Ghost.Roles.Raffles;
 using Content.Server.Ghost.Roles.Components;
 using Content.Server.Mind;
-using NetSerializer;
 
 namespace Content.Server._Sunrise.MindBearer;
 
@@ -34,6 +33,12 @@ public sealed partial class MindBearerSystem : EntitySystem
             return;
         }
 
+        if (ent.Comp.UsesLeft <= 0)
+        {
+            _popup.PopupEntity(Loc.GetString("mind-bearer-no-uses-left"), args.Target.Value, args.User, PopupType.Medium);
+            return;
+        }
+
         if (!_whitelist.IsWhitelistPass(ent.Comp.AllowTargets, args.Target.Value))
         {
             _popup.PopupEntity(Loc.GetString("mind-bearer-interact-not-allowed"), args.Target.Value, args.User, PopupType.Medium);
@@ -48,12 +53,6 @@ public sealed partial class MindBearerSystem : EntitySystem
             return;
         }
 
-        if (ent.Comp.UsesLeft <= 0)
-        {
-            _popup.PopupEntity(Loc.GetString("mind-bearer-no-uses-left"), args.Target.Value, args.User, PopupType.Medium);
-            return;
-        }
-
         var doAfterArgs = new DoAfterArgs(EntityManager, args.User, ent.Comp.UseTime, new MindBearerDoAfterEvent(), args.Used, args.Target, args.Used)
         {
             BreakOnDamage = true,
@@ -63,20 +62,18 @@ public sealed partial class MindBearerSystem : EntitySystem
             AttemptFrequency = AttemptFrequency.EveryTick,
         };
 
-        _doAfter.TryStartDoAfter(doAfterArgs);
-        args.Handled = true;
+        if (_doAfter.TryStartDoAfter(doAfterArgs))
+            args.Handled = true;
     }
 
     private void OnMindBearerDoAfter(Entity<MindBearerComponent> ent, ref MindBearerDoAfterEvent args)
     {
-        if (args.Handled || args.Cancelled || args.Args.Target == null)
+        if (args.Handled || args.Cancelled || args.Args.Target == null || args.Args.Used == null)
         {
             return;
         }
 
-        if (!TryComp<MindContainerComponent>(args.Args.Target, out var targetMindContainer) ||
-            targetMindContainer.Mind != null ||
-            !_mind.TryGetMind(args.Args.User, out var mindId, out _))
+        if (!_mind.TryGetMind(args.Args.User, out var mindId, out _))
         {
             _popup.PopupEntity(Loc.GetString("mind-bearer-interact-not-allowed"), args.Args.Target.Value, args.Args.User, PopupType.Medium);
             return;
