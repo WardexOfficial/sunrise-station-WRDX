@@ -15,7 +15,7 @@ public sealed partial class MindBearerComponent : Component
     public int UsesLeft = 1;
 
     [DataField, AutoNetworkedField]
-    public TimeSpan UseTime = TimeSpan.FromSeconds(15);
+    public TimeSpan UseTime = TimeSpan.FromSeconds(5);
 
     [DataField, AutoNetworkedField]
     public EntityWhitelist? AllowTargets = new();
