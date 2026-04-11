@@ -1,20 +1,22 @@
-using Content.Shared.Containers.ItemSlots;
+using Content.Shared.Whitelist;
+
 using Robust.Shared.GameStates;
 
-namespace Content.Shared._Sunrise.MindBrearer;
+namespace Content.Shared._Sunrise.MindBearer;
+
+/// <summary>
+/// Данный компонент используется исключительно в целях пометки.
+/// </summary>
 
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 public sealed partial class MindBearerComponent : Component
 {
-    [DataField("usesLeft"), AutoNetworkedField]
+    [DataField, AutoNetworkedField]
     public int UsesLeft = 1;
 
     [DataField, AutoNetworkedField]
-    public int DownloadTime = 15;
+    public TimeSpan UseTime = TimeSpan.FromSeconds(15);
 
     [DataField, AutoNetworkedField]
-    public int UploadTime = 10;
-
-    [DataField]
-    public ItemSlot Slot = new();
+    public EntityWhitelist? AllowTargets = new();
 }
