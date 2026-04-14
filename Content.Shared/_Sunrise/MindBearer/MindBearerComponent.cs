@@ -1,3 +1,4 @@
+using Content.Shared.Ghost.Roles.Raffles;
 using Content.Shared.Whitelist;
 
 using Robust.Shared.GameStates;
@@ -15,4 +16,12 @@ public sealed partial class MindBearerComponent : Component
 
     [DataField, AutoNetworkedField]
     public EntityWhitelist? AllowTargets = new();
+
+    [DataField]
+    public GhostRoleRaffleSettings GhostRolSettings = new()
+    {
+        InitialDuration = 10,
+        JoinExtendsDurationBy = 10,
+        MaxDuration = 30
+    };
 }
