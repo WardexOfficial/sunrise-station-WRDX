@@ -18,7 +18,7 @@ public sealed partial class MindBearerComponent : Component
     public EntityWhitelist? AllowTargets = new();
 
     [DataField]
-    public GhostRoleRaffleSettings GhostRolSettings = new()
+    public GhostRoleRaffleSettings GhostRoleSettings = new()
     {
         InitialDuration = 10,
         JoinExtendsDurationBy = 10,

@@ -15,13 +15,16 @@ public sealed partial class MindBearerSystem : SharedMindBearerSystem
     {
         base.OnMindBearerDoAfter(ent, ref args);
 
+        if (args.Cancelled || !args.Available)
+            return;
+
         var oldEntity = args.Args.User;
         var entMeta = MetaData(oldEntity);
         var ghostRoleComp = EnsureComp<GhostRoleComponent>(oldEntity);
         EnsureComp<GhostTakeoverAvailableComponent>(oldEntity);
         ghostRoleComp.RoleName = entMeta.EntityName;
         ghostRoleComp.RoleDescription = entMeta.EntityName;
-        ghostRoleComp.RaffleConfig = new GhostRoleRaffleConfig(ent.Comp.GhostRolSettings);
+        ghostRoleComp.RaffleConfig = new GhostRoleRaffleConfig(ent.Comp.GhostRoleSettings);
         args.Handled = true;
     }
 }

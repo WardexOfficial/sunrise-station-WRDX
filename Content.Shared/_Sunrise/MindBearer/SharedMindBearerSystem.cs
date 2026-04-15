@@ -62,11 +62,15 @@ public abstract partial class SharedMindBearerSystem : EntitySystem
     protected virtual void OnMindBearerDoAfter(Entity<MindBearerComponent> ent, ref MindBearerDoAfterEvent args)
     {
         if (args.Handled || args.Cancelled || args.Args.Target == null || args.Args.Used == null)
+        {
+            args.Available = false;
             return;
+        }
 
         if (!_mind.TryGetMind(args.Args.User, out var mindId, out _))
         {
             _popup.PopupEntity(Loc.GetString("mind-bearer-interact-not-allowed"), args.Args.Target.Value, args.Args.User, PopupType.Medium);
+            args.Available = false;
             return;
         }
 
