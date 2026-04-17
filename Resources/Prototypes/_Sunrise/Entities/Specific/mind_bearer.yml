@@ -5,9 +5,12 @@
   parent: BaseItem
   components:
   - type: Sprite
-    sprite: Objects/Devices/ai_card.rsi
+    sprite: _Sunrise/Entities/Objects/Devices/mind_bearer.rsi
     layers:
-    - state: base
+    - state: mind_digitizer
+  - type: Item
+    sprite: _Sunrise/Entities/Objects/Devices/mind_bearer.rsi
+    size: Tiny
   - type: Appearance
   - type: MindBearer
     allowTargets:
