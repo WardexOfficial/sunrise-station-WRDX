@@ -38,11 +38,21 @@ public abstract partial class SharedMindBearerSystem : EntitySystem
             return;
         }
 
-        if (!HasComp<MindContainerComponent>(args.Target.Value) ||
-            HasComp<MindBearerComponent>(args.Target.Value) ||
-            _mind.TryGetMind(args.Target.Value, out var _, out _))
+        if (!HasComp<MindContainerComponent>(args.Target.Value))
+        {
+            _popup.PopupEntity(Loc.GetString("mind-bearer-target-not-have-mind-container"), args.Target.Value, args.User, PopupType.Medium);
+            return;
+        }
+
+        if (HasComp<MindBearerComponent>(args.Target.Value))
         {
             _popup.PopupEntity(Loc.GetString("mind-bearer-interact-not-allowed"), args.Target.Value, args.User, PopupType.Medium);
+            return;
+        }
+
+        if (_mind.TryGetMind(args.Target.Value, out _, out _))
+        {
+            _popup.PopupEntity(Loc.GetString("mind-bearer-target-already-has-mind"), args.Target.Value, args.User, PopupType.Medium);
             return;
         }
 
@@ -52,6 +62,8 @@ public abstract partial class SharedMindBearerSystem : EntitySystem
             BreakOnMove = true,
             NeedHand = true,
             BreakOnDropItem = true,
+            CancelDuplicate = true,
+            DuplicateCondition = DuplicateConditions.SameTool,
             AttemptFrequency = AttemptFrequency.EveryTick,
         };
 
@@ -61,22 +73,18 @@ public abstract partial class SharedMindBearerSystem : EntitySystem
 
     protected virtual void OnMindBearerDoAfter(Entity<MindBearerComponent> ent, ref MindBearerDoAfterEvent args)
     {
-        if (args.Handled || args.Cancelled || args.Args.Target == null || args.Args.Used == null)
-        {
-            args.Available = false;
+        if (args.Cancelled || args.Args.Target == null || args.Args.Used == null)
             return;
-        }
 
         if (!_mind.TryGetMind(args.Args.User, out var mindId, out _))
         {
-            _popup.PopupEntity(Loc.GetString("mind-bearer-interact-not-allowed"), args.Args.Target.Value, args.Args.User, PopupType.Medium);
-            args.Available = false;
+            _popup.PopupEntity(Loc.GetString("mind-bearer-transfer-failed"), args.Args.Target.Value, args.Args.User, PopupType.Medium);
             return;
         }
 
+        _mind.TransferTo(mindId, args.Args.Target.Value);
+
         ent.Comp.UsesLeft--;
         Dirty(ent);
-
-        _mind.TransferTo(mindId, args.Args.Target.Value);
     }
 }

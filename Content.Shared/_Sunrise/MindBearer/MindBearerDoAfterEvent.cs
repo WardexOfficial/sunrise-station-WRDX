@@ -4,7 +4,4 @@ using Content.Shared.DoAfter;
 namespace Content.Shared._Sunrise.MindBearer;
 
 [Serializable, NetSerializable]
-public sealed partial class MindBearerDoAfterEvent : SimpleDoAfterEvent
-{
-    public bool Available = true;
-}
+public sealed partial class MindBearerDoAfterEvent : SimpleDoAfterEvent;

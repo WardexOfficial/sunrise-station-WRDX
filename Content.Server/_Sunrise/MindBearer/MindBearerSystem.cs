@@ -15,7 +15,7 @@ public sealed partial class MindBearerSystem : SharedMindBearerSystem
     {
         base.OnMindBearerDoAfter(ent, ref args);
 
-        if (args.Cancelled || !args.Available)
+        if (args.Cancelled)
             return;
 
         var oldEntity = args.Args.User;
@@ -23,7 +23,7 @@ public sealed partial class MindBearerSystem : SharedMindBearerSystem
         var ghostRoleComp = EnsureComp<GhostRoleComponent>(oldEntity);
         EnsureComp<GhostTakeoverAvailableComponent>(oldEntity);
         ghostRoleComp.RoleName = entMeta.EntityName;
-        ghostRoleComp.RoleDescription = entMeta.EntityName;
+        ghostRoleComp.RoleDescription = entMeta.EntityDescription;
         ghostRoleComp.RaffleConfig = new GhostRoleRaffleConfig(ent.Comp.GhostRoleSettings);
         args.Handled = true;
     }
