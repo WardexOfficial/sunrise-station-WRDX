@@ -4,6 +4,7 @@ using Content.Shared.DoAfter;
 using Content.Shared.Whitelist;
 using Content.Shared.Interaction;
 using Content.Shared.Popups;
+using Robust.Shared.Network;
 
 namespace Content.Shared._Sunrise.MindBearer;
 
@@ -13,6 +14,7 @@ public abstract partial class SharedMindBearerSystem : EntitySystem
     [Dependency] private readonly SharedDoAfterSystem _doAfter = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly SharedMindSystem _mind = default!;
+    [Dependency] private readonly INetManager _netManager = default!;
     public override void Initialize()
     {
         base.Initialize();
@@ -28,31 +30,31 @@ public abstract partial class SharedMindBearerSystem : EntitySystem
 
         if (ent.Comp.UsesLeft <= 0)
         {
-            _popup.PopupEntity(Loc.GetString("mind-bearer-no-uses-left"), args.Target.Value, args.User, PopupType.Medium);
+            _popup.PopupClient(Loc.GetString("mind-bearer-no-uses-left"), args.Target.Value, args.User, PopupType.Medium);
             return;
         }
 
         if (!_whitelist.IsWhitelistPass(ent.Comp.AllowTargets, args.Target.Value))
         {
-            _popup.PopupEntity(Loc.GetString("mind-bearer-interact-not-allowed"), args.Target.Value, args.User, PopupType.Medium);
+            _popup.PopupClient(Loc.GetString("mind-bearer-interact-not-allowed"), args.Target.Value, args.User, PopupType.Medium);
             return;
         }
 
         if (!HasComp<MindContainerComponent>(args.Target.Value))
         {
-            _popup.PopupEntity(Loc.GetString("mind-bearer-target-not-have-mind-container"), args.Target.Value, args.User, PopupType.Medium);
+            _popup.PopupClient(Loc.GetString("mind-bearer-target-not-have-mind-container"), args.Target.Value, args.User, PopupType.Medium);
             return;
         }
 
         if (HasComp<MindBearerComponent>(args.Target.Value))
         {
-            _popup.PopupEntity(Loc.GetString("mind-bearer-interact-not-allowed"), args.Target.Value, args.User, PopupType.Medium);
+            _popup.PopupClient(Loc.GetString("mind-bearer-interact-not-allowed"), args.Target.Value, args.User, PopupType.Medium);
             return;
         }
 
         if (_mind.TryGetMind(args.Target.Value, out _, out _))
         {
-            _popup.PopupEntity(Loc.GetString("mind-bearer-target-already-has-mind"), args.Target.Value, args.User, PopupType.Medium);
+            _popup.PopupClient(Loc.GetString("mind-bearer-target-already-has-mind"), args.Target.Value, args.User, PopupType.Medium);
             return;
         }
 
@@ -76,15 +78,19 @@ public abstract partial class SharedMindBearerSystem : EntitySystem
         if (args.Cancelled || args.Args.Target == null || args.Args.Used == null)
             return;
 
-        if (!_mind.TryGetMind(args.Args.User, out var mindId, out _))
+        if (!_mind.TryGetMind(args.Args.User, out var mindId, out _) ||
+            _mind.TryGetMind(args.Args.Target.Value, out _, out _))
         {
-            _popup.PopupEntity(Loc.GetString("mind-bearer-transfer-failed"), args.Args.Target.Value, args.Args.User, PopupType.Medium);
+            _popup.PopupClient(Loc.GetString("mind-bearer-transfer-failed"), args.Args.Target.Value, args.Args.User, PopupType.Medium);
             return;
         }
 
         _mind.TransferTo(mindId, args.Args.Target.Value);
 
-        ent.Comp.UsesLeft--;
-        Dirty(ent);
+        if (_netManager.IsServer)
+        {
+            ent.Comp.UsesLeft--;
+            Dirty(ent);
+        }
     }
 }
