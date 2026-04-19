@@ -14,7 +14,6 @@ public abstract partial class SharedMindBearerSystem : EntitySystem
     [Dependency] private readonly SharedDoAfterSystem _doAfter = default!;
     [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly SharedMindSystem _mind = default!;
-    [Dependency] private readonly INetManager _netManager = default!;
     public override void Initialize()
     {
         base.Initialize();
@@ -34,7 +33,7 @@ public abstract partial class SharedMindBearerSystem : EntitySystem
             return;
         }
 
-        if (!_whitelist.IsWhitelistPass(ent.Comp.AllowTargets, args.Target.Value))
+        if (!_whitelist.CheckBoth(args.Target, ent.Comp.WhitelistTargets, ent.Comp.BlacklistTargets))
         {
             _popup.PopupClient(Loc.GetString("mind-bearer-interact-not-allowed"), args.Target.Value, args.User, PopupType.Medium);
             return;
@@ -87,10 +86,7 @@ public abstract partial class SharedMindBearerSystem : EntitySystem
 
         _mind.TransferTo(mindId, args.Args.Target.Value);
 
-        if (_netManager.IsServer)
-        {
-            ent.Comp.UsesLeft--;
-            Dirty(ent);
-        }
+        ent.Comp.UsesLeft--;
+        Dirty(ent);
     }
 }

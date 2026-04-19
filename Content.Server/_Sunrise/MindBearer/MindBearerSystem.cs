@@ -6,11 +6,6 @@ namespace Content.Server._Sunrise.MindBearer;
 
 public sealed partial class MindBearerSystem : SharedMindBearerSystem
 {
-    public override void Initialize()
-    {
-        base.Initialize();
-    }
-
     protected override void OnMindBearerDoAfter(Entity<MindBearerComponent> ent, ref MindBearerDoAfterEvent args)
     {
         base.OnMindBearerDoAfter(ent, ref args);

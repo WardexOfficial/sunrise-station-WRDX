@@ -15,7 +15,10 @@ public sealed partial class MindBearerComponent : Component
     public TimeSpan UseTime = TimeSpan.FromSeconds(5);
 
     [DataField, AutoNetworkedField]
-    public EntityWhitelist? AllowTargets = new();
+    public EntityWhitelist? WhitelistTargets;
+
+    [DataField, AutoNetworkedField]
+    public EntityWhitelist? BlacklistTargets;
 
     [DataField]
     public GhostRoleRaffleSettings GhostRoleSettings = new()
