@@ -13,6 +13,6 @@
     size: Tiny
   - type: Appearance
   - type: MindBearer
-    allowTargets:
+    whitelistTargets:
       components:
       - BorgChassis
