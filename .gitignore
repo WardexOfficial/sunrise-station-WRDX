@@ -309,3 +309,10 @@ Resources/MapImages
 
 # Direnv stuff
 .direnv/
+
+# C# Dev Kit cache file
+*.lscache
+
+# Sunrise added start - не отслеживаем локально сгенерированные настройки шардов тестов
+.integration-filters/
+# Sunrise added end

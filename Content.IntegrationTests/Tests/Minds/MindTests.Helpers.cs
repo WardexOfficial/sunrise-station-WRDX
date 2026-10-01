@@ -18,6 +18,14 @@ namespace Content.IntegrationTests.Tests.Minds;
 // This partial class contains misc helper functions for other tests.
 public sealed partial class MindTests
 {
+    // TODO GAMETEST: Rewrite this test to use improved GameTest pair management when I have an API for that figured out.
+    public override PoolSettings PoolSettings => new()
+    {
+        DummyTicker = false,
+        Connected = true,
+        Dirty = true,
+    };
+
     /// <summary>
     /// Gets a server-client pair and ensures that the client is attached to a simple mind test entity.
     /// </summary>
@@ -26,15 +34,9 @@ public sealed partial class MindTests
     /// the player's mind's current entity, likely because some previous test directly changed the players attached
     /// entity.
     /// </remarks>
-    private static async Task<Pair.TestPair> SetupPair(bool dirty = false)
+    private async Task<Pair.TestPair> SetupPair(bool dirty = false)
     {
-        var pair = await PoolManager.GetServerClient(new PoolSettings
-        {
-            DummyTicker = false,
-            Connected = true,
-            Dirty = dirty
-        });
-
+        var pair = Pair;
         var entMan = pair.Server.ResolveDependency<IServerEntityManager>();
         var playerMan = pair.Server.ResolveDependency<IPlayerManager>();
         var mindSys = entMan.System<SharedMindSystem>();
@@ -166,13 +168,19 @@ public sealed partial class MindTests
 
     private static async Task Connect(Pair.TestPair pair, string username)
     {
-        var netManager = pair.Client.ResolveDependency<IClientNetManager>();
         var playerMan = pair.Server.ResolveDependency<IPlayerManager>();
         Assert.That(playerMan.Sessions, Is.Empty);
 
         await Task.WhenAll(pair.Client.WaitIdleAsync(), pair.Client.WaitIdleAsync());
         pair.Client.SetConnectTarget(pair.Server);
-        await pair.Client.WaitPost(() => netManager.ClientConnect(null!, 0, username));
+        // Sunrise edit start - fix RobustToolbox 270.1.0 run level transitions
+        var baseClient = pair.Client.ResolveDependency<Robust.Client.IBaseClient>();
+        await pair.Client.WaitPost(() =>
+        {
+            baseClient.PlayerNameOverride = username;
+            baseClient.ConnectToServer(new System.Net.DnsEndPoint("localhost", 1212));
+        });
+        // Sunrise edit end
         await pair.RunTicksSync(5);
 
         var player = playerMan.Sessions.Single();

@@ -14,20 +14,17 @@ namespace Content.Server.Salvage;
 
 public sealed partial class SalvageSystem
 {
-    [Dependency] private readonly IRuntimeLog _runtimeLog = default!;
+    [Dependency] private IRuntimeLog _runtimeLog = default!;
+
+    [Dependency] private EntityQuery<SalvageMobRestrictionsComponent> _salvMobQuery = default!;
+    [Dependency] private EntityQuery<MobStateComponent> _mobStateQuery = default!;
 
     private static readonly ProtoId<RadioChannelPrototype> MagnetChannel = "Supply";
-
-    private EntityQuery<SalvageMobRestrictionsComponent> _salvMobQuery;
-    private EntityQuery<MobStateComponent> _mobStateQuery;
 
     private List<(Entity<TransformComponent> Entity, EntityUid MapUid, Vector2 LocalPosition)> _detachEnts = new();
 
     private void InitializeMagnet()
     {
-        _salvMobQuery = GetEntityQuery<SalvageMobRestrictionsComponent>();
-        _mobStateQuery = GetEntityQuery<MobStateComponent>();
-
         SubscribeLocalEvent<SalvageMagnetDataComponent, MapInitEvent>(OnMagnetDataMapInit);
 
         SubscribeLocalEvent<SalvageMagnetTargetComponent, GridSplitEvent>(OnMagnetTargetSplit);
@@ -35,10 +32,17 @@ public sealed partial class SalvageSystem
         SubscribeLocalEvent<SalvageMagnetComponent, MagnetClaimOfferEvent>(OnMagnetClaim);
         SubscribeLocalEvent<SalvageMagnetComponent, ComponentStartup>(OnMagnetStartup);
         SubscribeLocalEvent<SalvageMagnetComponent, AnchorStateChangedEvent>(OnMagnetAnchored);
+
+        InitializeAdvancedMagnet(); // Sunrise-Edit
     }
 
     private void OnMagnetClaim(EntityUid uid, SalvageMagnetComponent component, ref MagnetClaimOfferEvent args)
     {
+        // Sunrise-Start
+        if (IsLocalMagnet(uid))
+            return;
+        // Sunrise-End
+
         var station = _station.GetOwningStation(uid);
 
         if (!TryComp(station, out SalvageMagnetDataComponent? dataComp) ||
@@ -222,10 +226,18 @@ public sealed partial class SalvageSystem
     // Just need something to announce.
     private Entity<SalvageMagnetComponent>? GetMagnet(Entity<SalvageMagnetDataComponent> data)
     {
+        // Sunrise-Start
+        if (TryGetLocalMagnet(data, out var localMagnet))
+            return localMagnet;
+        // Sunrise-End
         var query = AllEntityQuery<SalvageMagnetComponent, TransformComponent>();
 
         while (query.MoveNext(out var magnetUid, out var magnet, out var xform))
         {
+            // Sunrise-Start
+            if (IsLocalMagnet(magnetUid))
+                continue;
+            // Sunrise-End
             var stationUid = _station.GetOwningStation(magnetUid, xform);
 
             if (stationUid != data.Owner)
@@ -257,10 +269,19 @@ public sealed partial class SalvageSystem
 
     private void UpdateMagnetUIs(Entity<SalvageMagnetDataComponent> data)
     {
+        // Sunrise-Start
+        if (TryUpdateLocalMagnetUI(data))
+            return;
+        // Sunrise-End
         var query = AllEntityQuery<SalvageMagnetComponent, TransformComponent>();
 
         while (query.MoveNext(out var magnetUid, out var magnet, out var xform))
         {
+            // Sunrise-Start
+            if (IsLocalMagnet(magnetUid))
+                continue;
+            // Sunrise-End
+
             var station = _station.GetOwningStation(magnetUid, xform);
 
             if (station != data.Owner)
@@ -345,7 +366,7 @@ public sealed partial class SalvageSystem
             }
         }
 
-        var magnetXform = _xformQuery.GetComponent(magnet.Owner);
+        var magnetXform = Transform(magnet.Owner);
         var magnetGridUid = magnetXform.GridUid;
         var attachedBounds = new Box2Rotated();
         var mapId = MapId.Nullspace;
@@ -353,7 +374,7 @@ public sealed partial class SalvageSystem
 
         if (magnetGridUid != null)
         {
-            var magnetGridXform = _xformQuery.GetComponent(magnetGridUid.Value);
+            var magnetGridXform = Transform(magnetGridUid.Value);
             var (gridPos, gridRot) = _transform.GetWorldPositionRotation(magnetGridXform);
             var gridAABB = _gridQuery.GetComponent(magnetGridUid.Value).LocalAABB;
 
@@ -385,7 +406,7 @@ public sealed partial class SalvageSystem
         // It worked, move it into position and cleanup values.
         while (mapChildren.MoveNext(out var mapChild))
         {
-            var salvXForm = _xformQuery.GetComponent(mapChild);
+            var salvXForm = Transform(mapChild);
             var localPos = salvXForm.LocalPosition;
 
             _transform.SetParent(mapChild, salvXForm, spawnUid.Value);

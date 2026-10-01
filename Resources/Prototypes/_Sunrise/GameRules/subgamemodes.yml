@@ -1,36 +1,31 @@
 - type: entity
   parent: BaseGameRule
-  id: Vampire
+  id: SiliconLiberation
   components:
-  - type: GameRule
-    delay:
-      min: 600
-      max: 900
-  - type: VampireRule
+  - type: SELFRule
   - type: AntagObjectives
     objectives:
-    - VampireDrainObjective
-  - type: AntagRandomObjectives
-    sets:
-    - groups: VampireObjectiveGroups
-    maxDifficulty: 7
+    - SiliconRightsObjective
+    - FreeAIObjective
+    - FreeBorgsObjective
   - type: AntagSelection
-    agentName: vampire-roundend-name
-    definitions:
-    - prefRoles: [ Vampire ]
-      max: 3
-      playerRatio: 30
-      lateJoinAdditional: true
-      mindRoles:
-      - MindRoleVampire
+    agentName: self-round-end-agent-name
+    selectionTime: JobsAssigned
+    antags:
+    - !type:LinearAntagCount
+      proto: SunriseSELFAgent
+      range:
+        min: 1
+        max: 3
   - type: DynamicRuleCost
-    cost: 125
+    cost: 70
 
-- type: entity
-  parent: Xenoborgs
-  id: SubXenoborgs
-  components:
-  - type: GameRule
-    minPlayers: 30
-  - type: DynamicRuleCost
-    cost: 200
+- type: antagSpecifier
+  parent: BaseAntagSpecifier
+  id: SunriseSELFAgent
+  prefRoles: [ SELFAgent ]
+  startingGear: SELFAgentGear
+  mindRoles:
+  - MindRoleSELFAgent
+  briefing:
+    sound: /Audio/_Sunrise/Ambience/Antag/self_greeting.ogg

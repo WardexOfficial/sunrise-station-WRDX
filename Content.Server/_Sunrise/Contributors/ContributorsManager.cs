@@ -16,16 +16,16 @@ using Robust.Shared.Timing;
 
 namespace Content.Server._Sunrise.Contributors;
 
-public sealed class ContributorsManager
+public sealed partial class ContributorsManager
 {
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly ILogManager _logManager = default!;
-    [Dependency] private readonly IConfigurationManager _cfg = default!;
-    [Dependency] private readonly IServerNetManager _netMgr = default!;
-    [Dependency] private readonly IGameTiming _timing = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private ILogManager _logManager = default!;
+    [Dependency] private IConfigurationManager _cfg = default!;
+    [Dependency] private IServerNetManager _netMgr = default!;
+    [Dependency] private IGameTiming _timing = default!;
 
     private readonly List<ContributorEntry> _contributorsList = new();
-    private bool _enable = true;
+    private bool _enable;
     private string _apiUrl = string.Empty;
     private string _projectName = string.Empty;
 
@@ -39,10 +39,10 @@ public sealed class ContributorsManager
     {
         _sawmill = _logManager.GetSawmill("contributors");
 
-        _cfg.OnValueChanged(SunriseCCVars.ContributorsEnable, OnContributorsEnableChanged);
         _cfg.OnValueChanged(SunriseCCVars.ContributorsApiUrl, OnApiUrlChanged, true);
         _cfg.OnValueChanged(SunriseCCVars.ContributorsProjectName, OnProjectNameChanged, true);
         _cfg.OnValueChanged(SunriseCCVars.ContributorsApiToken, OnApiTokenChanged, true);
+        _cfg.OnValueChanged(SunriseCCVars.ContributorsEnable, OnContributorsEnableChanged, true);
 
         _netMgr.RegisterNetMessage<MsgFullContributorsList>();
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;

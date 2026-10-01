@@ -65,6 +65,12 @@
   recipeUnlocks:
     - ComputerTelevisionCircuitboard
     - SynthesizerInstrument
+    # sunrise-start
+    - TapeRecorder
+    - TapeCassetteOneMinute
+    - TapeCassetteTwoMinutes
+    - TapeCassetteThreeMinutes
+    # sunrise-end
     - DawInstrumentMachineCircuitboard
     - MassMediaCircuitboard
     - JukeboxCircuitBoard
@@ -103,7 +109,25 @@
   - FauxTileAstroIce
   - FauxTileAstroSnow
   - FauxTileAstroAsteroidSand
+  - FauxTileAstroAsteroidSandBorderless
   - FauxTileDesertAstroSand
+  - FauxTileAstroIronsand
+  - FauxTileAstroIronsandBorderless
+
+
+
+# - type: technology # Merge with other T2 medical research if possible! # Moved to Sunrise Medical tech
+#   id: MechanizedTreatment
+#   name: research-technology-mechanized-treatment
+#   icon:
+#     sprite: Mobs/Silicon/chassis.rsi
+#     state: medical
+#   discipline: CivilianServices
+#   tier: 2
+#   cost: 5000
+#   recipeUnlocks:
+#   - BorgModuleAdvancedTopical
+#   - AdvancedJetInjector
 
 - type: technology
   id: AdvancedCleaning
@@ -189,8 +213,6 @@
   recipeUnlocks:
   - PushHorn
   - BorgModuleAdvancedClowning
-
-# Tier 3
 
 - type: technology
   id: QuantumFiberWeaving

@@ -15,21 +15,23 @@ using Content.Shared.NPC.Systems;
 using Content.Shared.Roles;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Player;
+using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 
 namespace Content.Server._Sunrise.FleshCult.GameRule;
 
-public sealed class FleshCultRuleSystem : GameRuleSystem<FleshCultRuleComponent>
+public sealed partial class FleshCultRuleSystem : GameRuleSystem<FleshCultRuleComponent>
 {
-    [Dependency] private readonly IChatManager _chatManager = default!;
-    [Dependency] private readonly SharedAudioSystem _audioSystem = default!;
-    [Dependency] private readonly RoundEndSystem _roundEndSystem = default!;
-    [Dependency] private readonly MindSystem _mindSystem = default!;
-    [Dependency] private readonly NpcFactionSystem _npcFaction = default!;
-    [Dependency] private readonly ISharedPlayerManager _player = default!;
+    [Dependency] private IChatManager _chatManager = default!;
+    [Dependency] private SharedAudioSystem _audioSystem = default!;
+    [Dependency] private RoundEndSystem _roundEndSystem = default!;
+    [Dependency] private MindSystem _mindSystem = default!;
+    [Dependency] private NpcFactionSystem _npcFaction = default!;
+    [Dependency] private ISharedPlayerManager _player = default!;
 
     [ValidatePrototypeId<AntagPrototype>]
     private const string LeaderAntagProto = "FleshCultistLeader";
+    private static readonly EntProtoId FleshCultGameRule = "FleshCult";
 
     public override void Initialize()
     {
@@ -72,7 +74,6 @@ public sealed class FleshCultRuleSystem : GameRuleSystem<FleshCultRuleComponent>
         {
             RemComp<FleshCultistComponent>(cultist);
         }
-        QueueDel(uid);
     }
 
     private void OnObjectivesTextPrepend(EntityUid uid, FleshCultRuleComponent comp, ref ObjectivesTextPrependEvent args)
@@ -111,7 +112,7 @@ public sealed class FleshCultRuleSystem : GameRuleSystem<FleshCultRuleComponent>
                 {
                     if (fleshCult.FleshHearts.ContainsKey(ev.FleshHeartUid))
                         fleshCult.FleshHearts[ev.FleshHeartUid] = FleshHeartStatus.Final;
-                    _roundEndSystem.EndRound();
+                    _roundEndSystem.ForceSetCountdown(TimeSpan.FromSeconds(10), cantRecall: true);
                     break;
                 }
             }
@@ -133,7 +134,7 @@ public sealed class FleshCultRuleSystem : GameRuleSystem<FleshCultRuleComponent>
         var comp = EntityQuery<FleshCultRuleComponent>().FirstOrDefault();
         if (comp == null)
         {
-            GameTicker.StartGameRule("FleshCult", out var ruleEntity);
+            GameTicker.StartGameRule(FleshCultGameRule, out var ruleEntity);
             comp = Comp<FleshCultRuleComponent>(ruleEntity);
         }
 

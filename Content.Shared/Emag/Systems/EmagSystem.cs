@@ -18,13 +18,13 @@ namespace Content.Shared.Emag.Systems;
 /// 3. Have some check for if this actually needs to be emagged or is already emagged (to stop charge waste)
 /// 4. Past the check, add all the effects you desire and HANDLE THE EVENT ARGUMENT so a charge is spent
 /// 5. Optionally, set Repeatable on the event to true if you don't want the emagged component to be added
-public sealed class EmagSystem : EntitySystem
+public sealed partial class EmagSystem : EntitySystem
 {
-    [Dependency] private readonly ISharedAdminLogManager _adminLogger = default!;
-    [Dependency] private readonly SharedChargesSystem _sharedCharges = default!;
-    [Dependency] private readonly SharedPopupSystem _popup = default!;
-    [Dependency] private readonly TagSystem _tag = default!;
-    [Dependency] private readonly SharedAudioSystem _audio = default!;
+    [Dependency] private ISharedAdminLogManager _adminLogger = default!;
+    [Dependency] private SharedChargesSystem _sharedCharges = default!;
+    [Dependency] private SharedPopupSystem _popup = default!;
+    [Dependency] private TagSystem _tag = default!;
+    [Dependency] private SharedAudioSystem _audio = default!;
 
     public override void Initialize()
     {
@@ -70,7 +70,7 @@ public sealed class EmagSystem : EntitySystem
 
         var typeToUse = customEmagType ?? ent.Comp.EmagType;
 
-        var emaggedEvent = new GotEmaggedEvent(user, typeToUse);
+        var emaggedEvent = new GotEmaggedEvent(user, typeToUse, EmagUid: ent.Owner); // Sunrise Edit
         RaiseLocalEvent(target, ref emaggedEvent);
 
         if (!emaggedEvent.Handled)
@@ -147,4 +147,4 @@ public enum EmagType
 /// <param name="Repeatable">Can the entity be emagged more than once? Prevents adding of <see cref="EmaggedComponent"/></param>
 /// <remarks>Needs to be handled in shared/client, not just the server, to actually show the emagging popup</remarks>
 [ByRefEvent]
-public record struct GotEmaggedEvent(EntityUid UserUid, EmagType Type, bool Handled = false, bool Repeatable = false);
+public record struct GotEmaggedEvent(EntityUid UserUid, EmagType Type, bool Handled = false, bool Repeatable = false, EntityUid? EmagUid = null); // Sunrise Edit

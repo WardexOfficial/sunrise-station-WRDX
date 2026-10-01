@@ -14,7 +14,6 @@
   overrideConsoleVisibility: false
   alwaysUseSpawner: true
   supervisors: job-supervisors-head-of-prison
-  canBeAntag: false
   displayWeight: 80
   access:
   - Security
@@ -45,7 +44,6 @@
     id: PrisonPilotPDA
     ears: ClothingHeadsetSecurity
     belt: ClothingBeltPrisonGuardianFilled
-    pocket1: WeaponPistolG22
 
 - type: chameleonOutfit
   id: PrisonPilotChameleonOutfit

@@ -1,20 +1,23 @@
 using System.Linq;
+using Content.IntegrationTests.Fixtures;
 using Content.Shared.CCVar;
 using Robust.Server.Player;
 using Robust.Shared.Configuration;
 using Robust.Shared.Network;
 namespace Content.IntegrationTests.Tests.Lobby;
 
-public sealed class ServerReloginTest
+public sealed class ServerReloginTest : GameTest
 {
+    public override PoolSettings PoolSettings => new PoolSettings
+    {
+        Connected = true,
+        DummyTicker = false
+    };
+
     [Test]
     public async Task Relogin()
     {
-        await using var pair = await PoolManager.GetServerClient(new PoolSettings
-        {
-            Connected = true,
-            DummyTicker = false
-        });
+        var pair = Pair;
         var server = pair.Server;
         var client = pair.Client;
         var originalMaxPlayers = 0;
@@ -46,10 +49,14 @@ public sealed class ServerReloginTest
             Assert.That(serverPlayerMgr.PlayerCount, Is.EqualTo(0));
         });
         client.SetConnectTarget(server);
+        // Sunrise edit start - fix RobustToolbox 270.1.0 run level transitions
+        var baseClient = client.ResolveDependency<Robust.Client.IBaseClient>();
         await client.WaitPost(() =>
         {
-            clientNetManager.ClientConnect(null!, 0, username);
+            baseClient.PlayerNameOverride = username;
+            baseClient.ConnectToServer(new System.Net.DnsEndPoint("localhost", 1212));
         });
+        // Sunrise edit end
 
         await pair.RunTicksSync(20);
 
@@ -62,7 +69,5 @@ public sealed class ServerReloginTest
             //Put the cvar back, so other tests can still use this server
             serverConfig.SetCVar(CCVars.SoftMaxPlayers, originalMaxPlayers);
         });
-
-        await pair.CleanReturnAsync();
     }
 }

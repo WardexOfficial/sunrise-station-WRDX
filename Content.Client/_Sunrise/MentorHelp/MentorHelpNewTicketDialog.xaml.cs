@@ -6,12 +6,12 @@ using Robust.Shared.Utility;
 namespace Content.Client._Sunrise.MentorHelp
 {
     /// <summary>
-    /// Dialog for creating a new mentor help ticket
+    /// Диалог создания нового тикета менторской помощи.
     /// </summary>
     [GenerateTypedNameReferences]
     public sealed partial class MentorHelpNewTicketDialog : DefaultWindow
     {
-        [Dependency] private readonly ILocalizationManager _loc = default!;
+        [Dependency] private ILocalizationManager _loc = default!;
 
         public event Action<string, string>? OnTicketCreated;
 

@@ -48,27 +48,26 @@ using ClientRsi = Robust.Client.Graphics.RSI;
 namespace Content.Client.Lobby
 {
     // TODO: Полностью скопировать в папку санрайза, это сбросить до состояния оффов или закоментировать
-    public sealed class LobbyState : Robust.Client.State.State
+    public sealed partial class LobbyState : Robust.Client.State.State
     {
-        [Dependency] private readonly IBaseClient _baseClient = default!;
-        [Dependency] private readonly IClientConsoleHost _consoleHost = default!;
-        [Dependency] private readonly IEntityManager _entityManager = default!;
-        [Dependency] private readonly IResourceCache _resourceCache = default!;
-        [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
-        [Dependency] private readonly IGameTiming _gameTiming = default!;
-        [Dependency] private readonly IVoteManager _voteManager = default!;
-        [Dependency] private readonly ClientsidePlaytimeTrackingManager _playtimeTracking = default!;
-        [Dependency] private readonly IPrototypeManager _protoMan = default!;
-        [Dependency] private readonly IParallaxManager _parallaxManager = default!;
-        [Dependency] private readonly ISerializationManager _serialization = default!;
-        [Dependency] private readonly IResourceManager _resource = default!;
-        [Dependency] private readonly ServersHubManager _serversHubManager = default!;
-        [Dependency] private readonly ContributorsManager _contributorsManager = default!;
-        [Dependency] private readonly ChangelogManager _changelogManager = default!;
-        [Dependency] private readonly IConfigurationManager _cfg = default!;
-        [Dependency] private readonly NetTexturesManager _netTexturesManager = default!;
-        [Dependency] private readonly ILogManager _logManager = default!;
-        [Dependency] private readonly IRobustRandom _random = default!;
+        [Dependency] private IClientConsoleHost _consoleHost = default!;
+        [Dependency] private IEntityManager _entityManager = default!;
+        [Dependency] private IResourceCache _resourceCache = default!;
+        [Dependency] private IUserInterfaceManager _userInterfaceManager = default!;
+        [Dependency] private IGameTiming _gameTiming = default!;
+        [Dependency] private IVoteManager _voteManager = default!;
+        [Dependency] private ClientsidePlaytimeTrackingManager _playtimeTracking = default!;
+        [Dependency] private IPrototypeManager _protoMan = default!;
+        [Dependency] private IParallaxManager _parallaxManager = default!;
+        [Dependency] private ISerializationManager _serialization = default!;
+        [Dependency] private IResourceManager _resource = default!;
+        [Dependency] private ServersHubManager _serversHubManager = default!;
+        [Dependency] private ContributorsManager _contributorsManager = default!;
+        [Dependency] private ChangelogManager _changelogManager = default!;
+        [Dependency] private IConfigurationManager _cfg = default!;
+        [Dependency] private NetTexturesManager _netTexturesManager = default!;
+        [Dependency] private ILogManager _logManager = default!;
+        [Dependency] private IRobustRandom _random = default!;
 
         private ClientGameTicker _gameTicker = default!;
         private ContentAudioSystem _contentAudioSystem = default!;
@@ -153,7 +152,7 @@ namespace Content.Client.Lobby
             Lobby.LoadingAnimation.SetFromSpriteSpecifier(new SpriteSpecifier.Rsi(new ResPath(LoadingRsiPath), LoadingState));
             Lobby.LoadingAnimationContainer.Visible = false;
 
-            // Sunrise edit start - avoid eager startup callbacks from reloading lobby assets several times
+            // Sunrise edit start - не даем ранним startup callback несколько раз перезагружать lobby assets
             _cfg.OnValueChanged(SunriseCCVars.LobbyBackgroundType, OnLobbyBackgroundTypeChanged, false);
             _cfg.OnValueChanged(SunriseCCVars.LobbyArt, OnLobbyArtChanged, false);
             _cfg.OnValueChanged(SunriseCCVars.LobbyAnimation, OnLobbyAnimationChanged, false);
@@ -324,7 +323,7 @@ namespace Content.Client.Lobby
 
         private void LobbyStatusUpdated()
         {
-            // Sunrise added start - a new server status must reset transient lobby fallback choices
+            // Sunrise added start - новый server status должен сбрасывать временные fallback-выборы лобби
             ClearTransientLobbySelections();
             // Sunrise added end
             ApplyConfiguredLobbyBackground();
@@ -344,7 +343,7 @@ namespace Content.Client.Lobby
                 Lobby!.ReadyButton.ToggleMode = false;
                 Lobby!.ReadyButton.Pressed = false;
                 Lobby!.ObserveButton.Disabled = false;
-                Lobby!.GhostRolesButton.Disabled = false;
+                // Lobby!.GhostRolesButton.Disabled = false; // Sunrise-edit
             }
             else
             {
@@ -354,7 +353,7 @@ namespace Content.Client.Lobby
                 Lobby!.ReadyButton.ToggleMode = true;
                 Lobby!.ReadyButton.Disabled = false;
                 Lobby!.ObserveButton.Disabled = true;
-                Lobby!.GhostRolesButton.Disabled = true;
+                // Lobby!.GhostRolesButton.Disabled = true; // Sunrise-edit
             }
 
             if (_gameTicker.ServerInfoBlob != null)
@@ -547,7 +546,7 @@ namespace Content.Client.Lobby
 
             if (UsesNetworkLobbyResource(rsiPath))
             {
-                // Sunrise added start - do not request lobby animations over NetTextures until a fresh lobby status arrives
+                // Sunrise added start - не запрашиваем анимации лобби через NetTextures до свежего lobby status
                 if (!_gameTicker.HasLobbyStatus)
                 {
                     HideLoadingAnimation();
@@ -851,7 +850,7 @@ namespace Content.Client.Lobby
             return null;
         }
 
-        // Sunrise added start - transient lobby fallback cache for random selections and invalid saved ids
+        // Sunrise added start - временный fallback-кэш лобби для случайного выбора и невалидных сохраненных id
         private void ClearTransientLobbySelections()
         {
             _transientLobbyBackgroundType = null;

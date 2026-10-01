@@ -13,11 +13,11 @@
   startingGear: BrigmedicGear
   icon: "JobIconBrigmedic"
   supervisors: job-supervisors-hos
-  canBeAntag: false
   displayWeight: 15
   alternativeTitles:
   - job-alt-title-orderly
   access:
+  - Brigmedic
   - Medical
   - Security
   - Brig
@@ -30,7 +30,6 @@
 - type: startingGear
   id: BrigmedicGear
   equipment:
-    outerClothing: ClothingOuterCoatLabSecurityMedic
     shoes: ClothingShoesColorRed
     gloves: ClothingHandsGlovesLatex
     eyes: ClothingEyesHudMedSec

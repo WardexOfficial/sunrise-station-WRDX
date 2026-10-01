@@ -1,3 +1,5 @@
+ghost-panel-antagonist-silicon-name = Мятежный Силикон
+ghost-panel-antagonist-silicon-description = Враждебный автономный юнит под контролем мятежного ИИ.
 ghost-teleport-menu-antagonists-label = Антагонисты
 ghost-teleport-menu-alive-label = Живые
 ghost-teleport-menu-dead-label = Мертвые

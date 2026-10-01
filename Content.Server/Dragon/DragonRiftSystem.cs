@@ -20,15 +20,15 @@ namespace Content.Server.Dragon;
 /// <summary>
 /// Handles events for rift entities and rift updating.
 /// </summary>
-public sealed class DragonRiftSystem : EntitySystem
+public sealed partial class DragonRiftSystem : EntitySystem
 {
-    [Dependency] private readonly ChatSystem _chat = default!;
-    [Dependency] private readonly DragonSystem _dragon = default!;
-    [Dependency] private readonly ISerializationManager _serManager = default!;
-    [Dependency] private readonly NavMapSystem _navMap = default!;
-    [Dependency] private readonly NPCSystem _npc = default!;
-    [Dependency] private readonly SharedAudioSystem _audio = default!;
-    [Dependency] private readonly IRobustRandom _random = default!; // Sunrise-Edit
+    [Dependency] private ChatSystem _chat = default!;
+    [Dependency] private DragonSystem _dragon = default!;
+    [Dependency] private ISerializationManager _serManager = default!;
+    [Dependency] private NavMapSystem _navMap = default!;
+    [Dependency] private NPCSystem _npc = default!;
+    [Dependency] private SharedAudioSystem _audio = default!;
+    [Dependency] private IRobustRandom _random = default!; // Sunrise-Edit
 
     public override void Initialize()
     {
@@ -89,7 +89,7 @@ public sealed class DragonRiftSystem : EntitySystem
 
             if (comp.SpawnAccumulator > comp.SpawnCooldown)
             {
-                // Sunrise edit start - allow random spawn prototype selection from configured list
+                // Sunrise edit start - разрешаем случайный выбор spawn-прототипа из настроенного списка
                 comp.SpawnAccumulator -= comp.SpawnCooldown;
                 var spawnPrototype = comp.SpawnPrototypes.Count > 0
                     ? _random.Pick(comp.SpawnPrototypes)

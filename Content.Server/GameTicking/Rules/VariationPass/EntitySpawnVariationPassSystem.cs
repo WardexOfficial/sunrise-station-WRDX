@@ -1,12 +1,20 @@
-﻿using Content.Server.GameTicking.Rules.VariationPass.Components;
+using Content.Server.GameTicking.Rules.VariationPass.Components;
 using Content.Shared.Storage;
+using Content.Shared.Tag; // Sunrise-Edit
+using Robust.Shared.Prototypes; // Sunrise-Edit
 using Robust.Shared.Random;
 
 namespace Content.Server.GameTicking.Rules.VariationPass;
 
 /// <inheritdoc cref="EntitySpawnVariationPassComponent"/>
-public sealed class EntitySpawnVariationPassSystem : VariationPassSystem<EntitySpawnVariationPassComponent>
+public sealed partial class EntitySpawnVariationPassSystem : VariationPassSystem<EntitySpawnVariationPassComponent>
 {
+    // Sunrise-Edit start
+    [Dependency] private TagSystem _tag = default!;
+
+    private static readonly ProtoId<TagPrototype> StorytellerIgnoreMessTag = "StorytellerIgnoreMess";
+    // Sunrise-Edit end
+
     protected override void ApplyVariation(Entity<EntitySpawnVariationPassComponent> ent, ref StationVariationPassEvent args)
     {
         var totalTiles = Stations.GetTileCount(args.Station.AsNullable());
@@ -22,8 +30,10 @@ public sealed class EntitySpawnVariationPassSystem : VariationPassSystem<EntityS
             var ents = EntitySpawnCollection.GetSpawns(ent.Comp.Entities, Random);
             foreach (var spawn in ents)
             {
-                SpawnAtPosition(spawn, coords);
+                var spawned = SpawnAtPosition(spawn, coords);
+                _tag.AddTag(spawned, StorytellerIgnoreMessTag); // Sunrise-Edit
             }
         }
     }
 }
+

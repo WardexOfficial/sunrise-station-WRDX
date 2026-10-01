@@ -1,4 +1,4 @@
-﻿# spawn animation, spawns actual narsie when it ends
+# spawn animation, spawns actual narsie when it ends
 - type: entity
   id: MobHellspawnBossSpawn
   suffix: Spawn
@@ -49,9 +49,22 @@
   # categories: [ HideSpawnMenu ]
   suffix: Boss
   components:
+  - type: RadarBlip
+    color: "#FF2A2AFF"
+    scale: 2
+    shape: Circle
+    requireInSpace: false
+  - type: TriggerOnMobstateChange
+    mobState:
+    - Dead
+  - type: RemoveComponentsOnTrigger
+    triggerOnce: true
+    components:
+    - type: RadarBlip
   - type: Damageable
-    damageContainer: BiologicalMetaphysical
     damageModifierSet: HellSpawnBoss
+  - type: Injurable
+    damageContainer: BiologicalMetaphysical
   - type: ExplosionResistance
     damageCoefficient: 0.25
   - type: Fixtures
@@ -285,6 +298,16 @@
   - type: HellSpawnConsole
   - type: Godmode
   - type: BlockedTool
+  - type: RadarBlip
+    color: "#780a0a81"
+    scale: 2.5
+    shape: Circle
+    requireInSpace: false
+  - type: PointLight
+    radius: 1
+    energy: 4.5
+    color: "#ff4242"
+    castShadows: true
 
 - type: entity
   name: boss battle altar spawner
@@ -321,7 +344,6 @@
   - type: PassiveDamage
     allowedStates:
     - Alive
-    damageCap: 50
     damage:
       types:
         Blunt: 3.75

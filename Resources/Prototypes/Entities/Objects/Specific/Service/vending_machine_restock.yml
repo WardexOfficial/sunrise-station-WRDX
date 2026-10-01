@@ -23,8 +23,9 @@
   - type: Item
     size: Normal
   - type: Damageable
-    damageContainer: Inorganic
     damageModifierSet: Metallic
+  - type: Injurable
+    damageContainer: Inorganic
   - type: Destructible
     thresholds:
     - trigger:
@@ -283,6 +284,9 @@
     - NanoMedPlusInventory
     - NanoMedCivilianInventory
     - NanoMedCivilianWallInventory
+    - NanoMedSecurityInventory # Sunrise-Edit
+    - InterdyneEnterpriseInventory # Sunrise-Edit
+    - InterdyneCommercialWallInventory # Sunrise-Edit
   - type: Sprite
     layers:
     - state: base

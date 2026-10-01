@@ -13,12 +13,12 @@ using static Content.Shared.Administration.PermissionsEuiMsg;
 
 namespace Content.Server.Administration.UI
 {
-    public sealed class PermissionsEui : BaseEui
+    public sealed partial class PermissionsEui : BaseEui
     {
-        [Dependency] private readonly IPlayerManager _playerManager = default!;
-        [Dependency] private readonly IServerDbManager _db = default!;
-        [Dependency] private readonly IAdminManager _adminManager = default!;
-        [Dependency] private readonly ILogManager _logManager = default!;
+        [Dependency] private IPlayerManager _playerManager = default!;
+        [Dependency] private IServerDbManager _db = default!;
+        [Dependency] private IAdminManager _adminManager = default!;
+        [Dependency] private ILogManager _logManager = default!;
 
         private readonly ISawmill _sawmill;
         private bool _isLoading;
@@ -35,6 +35,14 @@ namespace Content.Server.Administration.UI
         public override void Opened()
         {
             base.Opened();
+
+            // Sunrise edit start - при включенном Stellar admin права управляются в Echoes.
+            if (IsBlockedByStellarAdmin())
+            {
+                Close();
+                return;
+            }
+            // Sunrise edit end
 
             StateDirty();
             LoadFromDb();
@@ -92,6 +100,14 @@ namespace Content.Server.Administration.UI
         {
             base.HandleMessage(msg);
 
+            // Sunrise edit start - не принимаем локальные изменения прав в Stellar mode.
+            if (IsBlockedByStellarAdmin())
+            {
+                Close();
+                return;
+            }
+            // Sunrise edit end
+
             switch (msg)
             {
                 case AddAdmin ca:
@@ -135,6 +151,11 @@ namespace Content.Server.Administration.UI
             {
                 LoadFromDb();
             }
+        }
+
+        private bool IsBlockedByStellarAdmin()
+        {
+            return SunriseAdminPermissionsGuard.IsBlocked(_adminManager, Player);
         }
 
         private async Task HandleRemoveAdminRank(RemoveAdminRank rr)

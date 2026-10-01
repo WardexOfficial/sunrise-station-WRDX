@@ -16,15 +16,15 @@ namespace Content.Shared.Throwing
     /// <summary>
     ///     Handles throwing landing and collisions.
     /// </summary>
-    public sealed class ThrownItemSystem : EntitySystem
+    public sealed partial class ThrownItemSystem : EntitySystem
     {
-        [Dependency] private readonly IGameTiming _gameTiming = default!;
-        [Dependency] private readonly INetManager _netMan = default!;
-        [Dependency] private readonly ISharedAdminLogManager _adminLogger = default!;
-        [Dependency] private readonly FixtureSystem _fixtures = default!;
-        [Dependency] private readonly SharedBroadphaseSystem _broadphase = default!;
-        [Dependency] private readonly SharedPhysicsSystem _physics = default!;
-        [Dependency] private readonly SharedGravitySystem _gravity = default!;
+        [Dependency] private IGameTiming _gameTiming = default!;
+        [Dependency] private INetManager _netMan = default!;
+        [Dependency] private ISharedAdminLogManager _adminLogger = default!;
+        [Dependency] private FixtureSystem _fixtures = default!;
+        [Dependency] private SharedBroadphaseSystem _broadphase = default!;
+        [Dependency] private SharedPhysicsSystem _physics = default!;
+        [Dependency] private SharedGravitySystem _gravity = default!;
 
         private const string ThrowingFixture = "throw-fixture";
 
@@ -156,6 +156,14 @@ namespace Content.Shared.Throwing
                 // If you remove this check verify slipping for other entities is networked properly.
                 if (_netMan.IsClient && !physics.Predict)
                     continue;
+
+                // Sunrise-Start - Clear deleted/invalid thrower references to prevent network state serialization exceptions
+                if (thrown.Thrower is { } thrower && (Deleted(thrower) || !Exists(thrower) || Terminating(thrower)))
+                {
+                    thrown.Thrower = null;
+                    Dirty(uid, thrown);
+                }
+                // Sunrise-End
 
                 if (thrown.LandTime <= _gameTiming.CurTime)
                 {

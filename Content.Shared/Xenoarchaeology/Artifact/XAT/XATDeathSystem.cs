@@ -7,18 +7,16 @@ namespace Content.Shared.Xenoarchaeology.Artifact.XAT;
 /// <summary>
 /// System for xeno artifact trigger that requires death of some mob near artifact.
 /// </summary>
-public sealed class XATDeathSystem : BaseXATSystem<XATDeathComponent>
+public sealed partial class XATDeathSystem : BaseXATSystem<XATDeathComponent>
 {
-    [Dependency] private readonly SharedTransformSystem _transform = default!;
+    [Dependency] private SharedTransformSystem _transform = default!;
 
-    private EntityQuery<XenoArtifactComponent> _xenoArtifactQuery;
+    [Dependency] private EntityQuery<XenoArtifactComponent> _xenoArtifactQuery = default!;
 
     /// <inheritdoc/>
     public override void Initialize()
     {
         base.Initialize();
-
-        _xenoArtifactQuery = GetEntityQuery<XenoArtifactComponent>();
 
         SubscribeLocalEvent<MobStateChangedEvent>(OnMobStateChanged);
     }
@@ -36,14 +34,15 @@ public sealed class XATDeathSystem : BaseXATSystem<XATDeathComponent>
             if (node.Attached == null)
                 continue;
 
-            var artifact = _xenoArtifactQuery.Get(node.Attached.Value);
-
-            if (!CanTrigger(artifact, (uid, node)))
+            if (!_xenoArtifactQuery.TryGetComponent(node.Attached.Value, out var artifact))
                 continue;
 
-            var artifactCoords = Transform(artifact).Coordinates;
+            if (!CanTrigger((node.Attached.Value, artifact), (uid, node)))
+                continue;
+
+            var artifactCoords = Transform(node.Attached.Value).Coordinates;
             if (_transform.InRange(targetCoords, artifactCoords, comp.Range))
-                Trigger(artifact, (uid, comp, node));
+                Trigger((node.Attached.Value, artifact), (uid, comp, node));
         }
     }
 }

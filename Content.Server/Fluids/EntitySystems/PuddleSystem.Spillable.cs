@@ -14,16 +14,20 @@ public sealed partial class PuddleSystem
 
         SubscribeLocalEvent<SpillableComponent, LandEvent>(SpillOnLand);
         // Openable handles the event if it's closed
-        SubscribeLocalEvent<SpillableComponent, SolutionContainerOverflowEvent>(OnOverflow);
+        SubscribeLocalEvent<SpillableComponent, SolutionOverflowEvent>(OnOverflow);
         SubscribeLocalEvent<SpillableComponent, SpillDoAfterEvent>(OnDoAfter);
     }
 
-    private void OnOverflow(Entity<SpillableComponent> entity, ref SolutionContainerOverflowEvent args)
+    private void OnOverflow(Entity<SpillableComponent> entity, ref SolutionOverflowEvent args)
     {
         if (args.Handled)
             return;
 
-        TrySpillAt(Transform(entity).Coordinates, args.Overflow, out _);
+        TrySpillAt(Transform(entity).Coordinates, args.Overflow, out var spawned); // Sunrise-Edit
+        // Sunrise-Edit start
+        if (_tag.HasTag(entity.Owner, StorytellerIgnoreMessTag))
+            _tag.AddTag(spawned, StorytellerIgnoreMessTag);
+        // Sunrise-Edit end
         args.Handled = true;
     }
 

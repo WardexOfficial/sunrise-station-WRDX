@@ -1,11 +1,18 @@
 using Content.Server.Spawners.Components;
+using Content.Shared.Tag; // Sunrise-Edit
 using Robust.Shared.Prototypes;
 using Robust.Shared.Spawners;
 
 namespace Content.Server.Spawners.EntitySystems;
 
-public sealed class SpawnOnDespawnSystem : EntitySystem
+public sealed partial class SpawnOnDespawnSystem : EntitySystem
 {
+    [Dependency] private TagSystem _tag = default!; // Sunrise-Edit
+
+    // Sunrise-Edit start
+    private static readonly ProtoId<TagPrototype> StorytellerIgnoreMessTag = "StorytellerIgnoreMess";
+    // Sunrise-Edit end
+
     public override void Initialize()
     {
         base.Initialize();
@@ -18,7 +25,11 @@ public sealed class SpawnOnDespawnSystem : EntitySystem
         if (!TryComp(uid, out TransformComponent? xform))
             return;
 
-        Spawn(comp.Prototype, xform.Coordinates);
+        var spawned = Spawn(comp.Prototype, xform.Coordinates);
+        // Sunrise-Edit start
+        if (_tag.HasTag(uid, StorytellerIgnoreMessTag))
+            _tag.AddTag(spawned, StorytellerIgnoreMessTag);
+        // Sunrise-Edit end
     }
 
     public void SetPrototype(Entity<SpawnOnDespawnComponent> entity, EntProtoId prototype)

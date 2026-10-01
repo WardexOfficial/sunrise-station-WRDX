@@ -6,11 +6,11 @@ using Robust.Shared.Random;
 
 namespace Content.Shared._Sunrise.CarpQueen;
 
-public abstract class SharedCarpQueenSystem : EntitySystem
+public abstract partial class SharedCarpQueenSystem : EntitySystem
 {
-    [Dependency] protected readonly IPrototypeManager PrototypeManager = default!;
-    [Dependency] protected readonly IRobustRandom Random = default!;
-    [Dependency] private readonly SharedActionsSystem _actions = default!;
+    [Dependency] protected IPrototypeManager PrototypeManager = default!;
+    [Dependency] protected IRobustRandom Random = default!;
+    [Dependency] private SharedActionsSystem _actions = default!;
 
     public override void Initialize()
     {
@@ -95,8 +95,8 @@ public abstract class SharedCarpQueenSystem : EntitySystem
     }
 
     /// <summary>
-    /// Converts CarpQueenOrderType to RatKingOrderType for HTN compatibility.
-    /// HTN compounds use RatKingOrderType, so we need to map our order types to them.
+    /// Конвертирует CarpQueenOrderType в RatKingOrderType для совместимости с HTN.
+    /// HTN-компаунды используют RatKingOrderType, поэтому приказы нужно сопоставить с ними.
     /// </summary>
     public static RatKingOrderType ConvertToRatKingOrder(CarpQueenOrderType orderType)
     {
@@ -110,5 +110,4 @@ public abstract class SharedCarpQueenSystem : EntitySystem
         };
     }
 }
-
 

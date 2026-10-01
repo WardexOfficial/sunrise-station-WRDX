@@ -12,21 +12,21 @@ using Robust.Shared.Random;
 
 namespace Content.Shared.Trigger.Systems;
 
-public sealed class ScramOnTriggerSystem : XOnTriggerSystem<ScramOnTriggerComponent>
+public sealed partial class ScramOnTriggerSystem : XOnTriggerSystem<ScramOnTriggerComponent>
 {
-    [Dependency] private readonly PullingSystem _pulling = default!;
-    [Dependency] private readonly SharedTransformSystem _transform = default!;
-    [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly SharedAudioSystem _audio = default!;
-    [Dependency] private readonly INetManager _net = default!;
-    [Dependency] private readonly TurfSystem _turfSystem = default!;
+    [Dependency] private PullingSystem _pulling = default!;
+    [Dependency] private SharedTransformSystem _transform = default!;
+    [Dependency] private IRobustRandom _random = default!;
+    [Dependency] private SharedAudioSystem _audio = default!;
+    [Dependency] private INetManager _net = default!;
+    [Dependency] private TurfSystem _turfSystem = default!;
 
     protected override void OnTrigger(Entity<ScramOnTriggerComponent> ent, EntityUid target, ref TriggerEvent args)
     {
         // We need stop the user from being pulled so they don't just get "attached" with whoever is pulling them.
         // This can for example happen when the user is cuffed and being pulled.
         if (TryComp<PullableComponent>(target, out var pull) && _pulling.IsPulled(target, pull))
-            _pulling.TryStopPull(ent, pull);
+            _pulling.TryStopPull(target, pull);
 
         // Check if the user is pulling anything, and drop it if so.
         if (TryComp<PullerComponent>(target, out var puller) && TryComp<PullableComponent>(puller.Pulling, out var pullable))

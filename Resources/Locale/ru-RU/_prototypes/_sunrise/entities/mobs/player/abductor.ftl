@@ -1,5 +1,7 @@
 ent-MobAbductor = абдуктор
     .desc = { ent-BaseMobAbductor.desc }
+ent-MobAbductorNonAntag = урист МакАбдуктор
+    .desc = { ent-MobAbductor.desc }
 ent-MobAbductorScientist = абдуктор учёный
     .desc = { ent-MobAbductor.desc }
 ent-MobAbductorAgent = абдуктор агент

@@ -26,7 +26,9 @@
           - FitsInDispenser
   - type: ChemMaster
     pillDosageLimit: 20
+    # Sunrise-Edit start - patch dosage limit
     patchDosageLimit: 20
+    # Sunrise-Edit end
   - type: Physics
     bodyType: Static
   - type: Fixtures
@@ -92,9 +94,8 @@
           - Bottle
           - PillCanister
           - PatchPack # Sunrise-edit
-  - type: SolutionContainerManager
-    solutions:
-      buffer: {}
+  - type: Solution # Chemmaster is special in how it interacts with reagents. For now.
+    id: buffer
   - type: DumpableSolution
     solution: buffer
     unlimited: true

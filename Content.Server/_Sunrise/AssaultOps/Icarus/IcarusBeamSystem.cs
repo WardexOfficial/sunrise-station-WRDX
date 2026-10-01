@@ -1,5 +1,4 @@
 using System.Numerics;
-using Content.Server.Atmos.Components;
 using Content.Server.Atmos.EntitySystems;
 using Content.Shared.Atmos.Components;
 using Content.Shared.Ghost;
@@ -12,31 +11,36 @@ using Robust.Shared.Timing;
 
 namespace Content.Server._Sunrise.AssaultOps.Icarus;
 
-public sealed class IcarusBeamSystem : EntitySystem
+public sealed partial class IcarusBeamSystem : EntitySystem
 {
-    [Dependency] private readonly IMapManager _map = default!;
-    [Dependency] private readonly IGameTiming _timing = default!;
-    [Dependency] private readonly EntityLookupSystem _lookup = default!;
-    [Dependency] private readonly FlammableSystem _flammable = default!;
-    [Dependency] private readonly SharedPhysicsSystem _physics = default!;
-    [Dependency] private readonly TransformSystem _transform = default!;
+    [Dependency] private IMapManager _mapMan = default!;
+    [Dependency] private IGameTiming _timing = default!;
+    [Dependency] private EntityLookupSystem _lookup = default!;
+    [Dependency] private FlammableSystem _flammable = default!;
+    [Dependency] private SharedPhysicsSystem _physics = default!;
+    [Dependency] private TransformSystem _transform = default!;
+    [Dependency] private MapSystem _map = default!;
 
     public override void Update(float frameTime)
     {
         base.Update(frameTime);
 
-        var query = EntityQuery<IcarusBeamComponent, TransformComponent>(true);
-        foreach (var (comp, xform) in query)
+        // Sunrise edit start - continuously set velocity to prevent slowdown from damping/friction
+        var query = EntityQueryEnumerator<IcarusBeamComponent, TransformComponent, PhysicsComponent>();
+        while (query.MoveNext(out var uid, out var comp, out var xform, out var phys))
         {
-            DestroyEntities(comp, xform);
-            BurnEntities(comp.Owner, comp, xform);
+            _physics.SetLinearVelocity(uid, _transform.GetWorldRotation(uid).ToWorldVec() * comp.Speed, body: phys);
+
+            DestroyEntities(uid, comp, xform);
+            BurnEntities(uid, comp, xform);
 
             if (comp.DestroyTiles)
-                DestroyTiles(comp, xform);
+                DestroyTiles((uid, comp));
 
             if (_timing.CurTime > comp.LifetimeEnd)
-                QueueDel(comp.Owner);
+                QueueDel(uid);
         }
+        // Sunrise edit end
     }
 
     public override void Initialize()
@@ -73,21 +77,24 @@ public sealed class IcarusBeamSystem : EntitySystem
     /// <summary>
     /// Destroy any grid tiles in beam radius.
     /// </summary>
-    private void DestroyTiles(IcarusBeamComponent component, TransformComponent trans)
+    private void DestroyTiles(Entity<IcarusBeamComponent> ent)
     {
-        var radius = component.DestroyRadius;
-        var worldPos = trans.WorldPosition;
+        var radius = ent.Comp.DestroyRadius;
+        var worldPos = _transform.GetWorldPosition(ent);
 
         var circle = new Circle(worldPos, radius);
         var r = new Vector2(radius, radius);
         var box = new Box2(worldPos - r, worldPos + r);
 
-        foreach (var grid in _map.FindGridsIntersecting(trans.MapID, box))
+        var grids = new List<Entity<MapGridComponent>>();
+        _mapMan.FindGridsIntersecting(Transform(ent).MapID, box, ref grids);
+
+        foreach (var grid in grids)
         {
             // Bundle these together so we can use the faster helper to set tiles.
             var toDestroy = new List<(Vector2i, Tile)>();
 
-            foreach (var tile in grid.GetTilesIntersecting(circle))
+            foreach (var tile in _map.GetTilesIntersecting(grid, grid.Comp, circle))
             {
                 if (tile.Tile.IsEmpty)
                     continue;
@@ -95,20 +102,20 @@ public sealed class IcarusBeamSystem : EntitySystem
                 toDestroy.Add((tile.GridIndices, Tile.Empty));
             }
 
-            grid.SetTiles(toDestroy);
+            _map.SetTiles(grid, grid.Comp, toDestroy);
         }
     }
 
     /// <summary>
     /// Handle deleting entities in beam radius.
     /// </summary>
-    private void DestroyEntities(IcarusBeamComponent component, TransformComponent trans)
+    private void DestroyEntities(EntityUid beam, IcarusBeamComponent component, TransformComponent trans)
     {
         var radius = component.DestroyRadius - 0.5f;
         var entitys = _lookup.GetEntitiesInRange(trans.MapID, trans.WorldPosition, radius);
         foreach (var entity in entitys)
         {
-            if (!CanDestroy(component, entity))
+            if (!CanDestroy(beam, component, entity))
                 continue;
 
             QueueDel(entity);
@@ -123,7 +130,7 @@ public sealed class IcarusBeamSystem : EntitySystem
         var radius = component.FlameRadius * 2;
         foreach (var entity in _lookup.GetEntitiesInRange(trans.MapID, trans.WorldPosition, radius))
         {
-            if (!CanDestroy(component, entity))
+            if (!CanDestroy(beam, component, entity))
                 continue;
 
             if (!TryComp<FlammableComponent>(entity, out var flammable))
@@ -135,10 +142,26 @@ public sealed class IcarusBeamSystem : EntitySystem
         }
     }
 
-    private bool CanDestroy(IcarusBeamComponent component, EntityUid entity)
+    private bool CanDestroy(EntityUid beam, IcarusBeamComponent component, EntityUid entity)
     {
-        return entity != component.Owner &&
-               !EntityManager.HasComponent<MapGridComponent>(entity) &&
-               !EntityManager.HasComponent<GhostComponent>(entity);
+        if (entity == beam)
+            return false;
+
+        if (HasComp<MapGridComponent>(entity))
+            return false;
+
+        var current = entity;
+        while (current.IsValid())
+        {
+            if (HasComp<GhostComponent>(current))
+                return false;
+
+            var xform = Transform(current);
+            if (xform.ParentUid == current)
+                break;
+            current = xform.ParentUid;
+        }
+
+        return true;
     }
 }

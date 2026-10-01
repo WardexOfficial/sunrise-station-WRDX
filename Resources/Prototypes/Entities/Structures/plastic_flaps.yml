@@ -29,10 +29,10 @@
         layer:
         - MidImpassable
   - type: Damageable
-    damageContainer: StructuralInorganic
     damageModifierSet: Metallic
+  - type: Injurable
+    damageContainer: StructuralInorganic
   # Sunrise-Start
-  - type: Airtight
   - type: ExaminableDamage
     messages: WindowMessages
   - type: Repairable

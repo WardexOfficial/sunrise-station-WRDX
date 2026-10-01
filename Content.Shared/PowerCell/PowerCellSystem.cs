@@ -12,11 +12,11 @@ namespace Content.Shared.PowerCell;
 
 public sealed partial class PowerCellSystem : EntitySystem
 {
-    [Dependency] private readonly IGameTiming _timing = default!;
-    [Dependency] private readonly ItemSlotsSystem _itemSlots = default!;
-    [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
-    [Dependency] private readonly SharedBatterySystem _battery = default!;
-    [Dependency] private readonly SharedPopupSystem _popup = default!;
+    [Dependency] private IGameTiming _timing = default!;
+    [Dependency] private ItemSlotsSystem _itemSlots = default!;
+    [Dependency] private SharedAppearanceSystem _appearance = default!;
+    [Dependency] private SharedBatterySystem _battery = default!;
+    [Dependency] private SharedPopupSystem _popup = default!;
 
     public override void Initialize()
     {
@@ -46,8 +46,16 @@ public sealed partial class PowerCellSystem : EntitySystem
             return;
 
         // TODO: Can't this just use the ItemSlot's whitelist?
+        // Sunrise edit start - validate inserted entity type for power cell slots
+        // Only allow entities with PowerCellComponent
         if (!HasComp<PowerCellComponent>(args.EntityUid))
+        {
             args.Cancel();
+            return;
+        }
+        // System also uses whitelist logic in the component to check if its allowed to insert.
+        // Sunrise edit end
+
     }
 
     private void OnCellSlotInserted(Entity<PowerCellSlotComponent> ent, ref EntInsertedIntoContainerMessage args)

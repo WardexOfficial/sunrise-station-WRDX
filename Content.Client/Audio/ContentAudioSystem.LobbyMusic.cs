@@ -18,9 +18,9 @@ namespace Content.Client.Audio;
 // Part of ContentAudioSystem that is responsible for lobby music playing/stopping and round-end sound-effect.
 public sealed partial class ContentAudioSystem
 {
-    [Dependency] private readonly IBaseClient _client = default!;
-    [Dependency] private readonly ClientGameTicker _gameTicker = default!;
-    [Dependency] private readonly IResourceCache _resourceCache = default!;
+    [Dependency] private IBaseClient _client = default!;
+    [Dependency] private ClientGameTicker _gameTicker = default!;
+    [Dependency] private IResourceCache _resourceCache = default!;
 
     private readonly AudioParams _lobbySoundtrackParams = new(-5f, 1, 0, 0, 0, false, 0f);
     private readonly AudioParams _roundEndSoundEffectParams = new(-5f, 1, 0, 0, 0, false, 0f);
@@ -77,7 +77,7 @@ public sealed partial class ContentAudioSystem
         SubscribeNetworkEvent<LobbyMusicStopEvent>(OnLobbySongStopped);
         SubscribeNetworkEvent<LobbyPlaylistChangedEvent>(OnLobbySongChanged);
 
-        // Sunrise added start - register separate round-end music networking in the Sunrise partial.
+        // Sunrise added start - регистрируем отдельный round-end music networking в Sunrise partial.
         InitializeSunriseLobbyMusic();
         // Sunrise added end
     }
@@ -143,7 +143,7 @@ public sealed partial class ContentAudioSystem
             return;
         }
 
-        // Sunrise added start - cache the fresh playlist even if we are not in the lobby yet.
+        // Sunrise added start - кэшируем свежий плейлист, даже если мы еще не в лобби.
         CacheSunriseLobbyPlaylist(playlist);
         // Sunrise added end
         EndLobbyMusic();
@@ -171,7 +171,7 @@ public sealed partial class ContentAudioSystem
     {
         if (_lobbySoundtrackInfo != null
             || !_configManager.GetCVar(CCVars.LobbyMusicEnabled)
-            // Sunrise edit start - defer lobby playback until the actual lobby state is active.
+            // Sunrise edit start - откладываем воспроизведение лобби до активации настоящего lobby state.
             || ShouldBlockSunriseLobbyMusicStart())
             // Sunrise edit end
         {

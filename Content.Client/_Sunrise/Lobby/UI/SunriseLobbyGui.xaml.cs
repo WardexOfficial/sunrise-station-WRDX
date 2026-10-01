@@ -15,6 +15,7 @@ using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Configuration;
+using Robust.Shared.Maths;
 using Robust.Shared.Utility;
 
 namespace Content.Client._Sunrise.Lobby.UI;
@@ -22,14 +23,14 @@ namespace Content.Client._Sunrise.Lobby.UI;
 [GenerateTypedNameReferences]
 public sealed partial class SunriseLobbyGui : UIScreen
 {
-    [Dependency] private readonly IClientConsoleHost _console = default!;
-    [Dependency] private readonly IGameTiming _timing = default!;
-    [Dependency] private readonly IParallaxManager _parallax = default!;
-    [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly IResourceCache _resource = default!;
-    [Dependency] private readonly IConfigurationManager _cfg = default!;
-    [Dependency] private readonly IUriOpener _uri = default!;
-    [Dependency] private readonly ILocalizationManager _loc = default!;
+    [Dependency] private IClientConsoleHost _console = default!;
+    [Dependency] private IGameTiming _timing = default!;
+    [Dependency] private IParallaxManager _parallax = default!;
+    [Dependency] private IRobustRandom _random = default!;
+    [Dependency] private IResourceCache _resource = default!;
+    [Dependency] private IConfigurationManager _cfg = default!;
+    [Dependency] private IUriOpener _uri = default!;
+    [Dependency] private ILocalizationManager _loc = default!;
 
     public string LobbyParallax = "FastSpace";
     public bool ShowParallax;
@@ -47,6 +48,7 @@ public sealed partial class SunriseLobbyGui : UIScreen
     public Texture? IconExpanded;
     public Texture? IconCollapsed;
 
+    private float _bottomCenterProfileExpandedWidth = float.NaN;
     private readonly StyleBoxTexture _back;
 
     public SunriseLobbyGui()
@@ -78,6 +80,8 @@ public sealed partial class SunriseLobbyGui : UIScreen
 
         LeftBottomPanel.PanelOverride = _back;
 
+        BottomCenterProfilePanel.PanelOverride = _back;
+
         LeftTopPanel.PanelOverride = _back;
 
         LobbySongPanel.PanelOverride = _back;
@@ -92,6 +96,8 @@ public sealed partial class SunriseLobbyGui : UIScreen
         LoadIcons();
         SetupButtonsIcons();
         SetupButtonsBinding();
+
+        BottomCenterProfilePanel.OnResized += UpdateBottomCenterProfileWidthState;
     }
 
     private void OnServerNameChanged(string serverName)
@@ -124,9 +130,65 @@ public sealed partial class SunriseLobbyGui : UIScreen
         ChatHider.Modulate = Palettes.Gold.Base;
         UserProfileHider.Modulate = Palettes.Gold.Base;
 
-        // Скрываем чейнджлог по умолчанию
+        // Скрываем чейнджлог по умолчанию.
         ChangelogContent.Visible = false;
         ChangelogHider.Texture = IconCollapsed;
+
+        UpdateBottomCenterProfileWidthState();
+    }
+
+    private void SetUserProfileExpanded(bool expanded)
+    {
+        UserProfileContent.Visible = expanded;
+        UserProfileHider.Texture = expanded ? IconExpanded : IconCollapsed;
+        UpdateBottomCenterProfileWidthState();
+
+        if (expanded)
+            UserProfileBody.RequestAccountBindingsRefresh();
+    }
+
+    protected override void Resized()
+    {
+        base.Resized();
+        UpdateBottomCenterProfileWidthState();
+    }
+
+    private void UpdateBottomCenterProfileWidthState()
+    {
+        if (DefaultState.Size.X <= 0f || DefaultState.Size.Y <= 0f)
+            return;
+
+        BottomCenterProfilePanel.Measure(DefaultState.Size);
+
+        var availableWidth = DefaultState.Size.X;
+        var maxWidth = BottomCenterProfilePanel.MaxWidth > 0f
+            ? BottomCenterProfilePanel.MaxWidth
+            : availableWidth;
+        var clampedWidth = MathF.Min(availableWidth, maxWidth);
+
+        if (UserProfileContent.Visible)
+        {
+            var measuredWidth = MathF.Max(BottomCenterProfilePanel.Size.X, BottomCenterProfilePanel.DesiredSize.X);
+            _bottomCenterProfileExpandedWidth = measuredWidth > 0f
+                ? Math.Clamp(measuredWidth, 0f, clampedWidth)
+                : clampedWidth;
+        }
+        else if (float.IsNaN(_bottomCenterProfileExpandedWidth))
+        {
+            var measuredWidth = MathF.Max(BottomCenterProfilePanel.Size.X, BottomCenterProfilePanel.DesiredSize.X);
+            _bottomCenterProfileExpandedWidth = measuredWidth > 0f
+                ? Math.Clamp(measuredWidth, 0f, clampedWidth)
+                : clampedWidth;
+        }
+        else
+        {
+            _bottomCenterProfileExpandedWidth = MathF.Min(_bottomCenterProfileExpandedWidth, clampedWidth);
+        }
+
+        if (Math.Abs(BottomCenterProfilePanel.MinWidth - _bottomCenterProfileExpandedWidth) >= 0.5f)
+            BottomCenterProfilePanel.MinWidth = _bottomCenterProfileExpandedWidth;
+
+        DefaultStateMainRow.Margin = new Thickness(0f, 0f, 0f, 0f);
     }
 
     #region Subscribers
@@ -136,9 +198,8 @@ public sealed partial class SunriseLobbyGui : UIScreen
         SetServersHubEnable(enable);
     }
 
-    private void OnServiceAuthEnableChanged(bool enable)
+    private void OnContributorsEnableChanged(bool enable)
     {
-        SetUserProfileEnable(enable);
         SetContributorsEnable(enable);
     }
 
@@ -150,11 +211,6 @@ public sealed partial class SunriseLobbyGui : UIScreen
     private void SetContributorsEnable(bool enable)
     {
         ContributorsBox.Visible = enable;
-    }
-
-    private void SetUserProfileEnable(bool enable)
-    {
-        UserProfileBox.Visible = enable;
     }
 
     private void OnDiscordLinkChanged(string url)

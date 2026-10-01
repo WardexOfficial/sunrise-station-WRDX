@@ -15,12 +15,10 @@ using Content.Shared.Mobs;
 using Content.Shared.Mobs.Systems;
 using Content.Shared.Popups;
 using Content.Shared.Prayer;
-using Content.Shared.Stunnable;
 using Content.Shared.Timing;
-using Content.Shared.Vampire.Components;
 using Content.Shared.Verbs;
 using Robust.Shared.Audio.Systems;
-using Robust.Shared.Containers;
+using Robust.Shared.Map;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
@@ -29,49 +27,29 @@ using System.Linq;
 
 namespace Content.Server.Bible
 {
-    public sealed class BibleSystem : EntitySystem
+    public sealed partial class BibleSystem : EntitySystem
     {
-        [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
-        [Dependency] private readonly IEntityManager _entityManager = default!;
-        [Dependency] private readonly IRobustRandom _random = default!;
-        [Dependency] private readonly ActionBlockerSystem _blocker = default!;
-        [Dependency] private readonly DamageableSystem _damageableSystem = default!;
-        [Dependency] private readonly InventorySystem _invSystem = default!;
-        [Dependency] private readonly MobStateSystem _mobStateSystem = default!;
-        [Dependency] private readonly PopupSystem _popupSystem = default!;
-        [Dependency] private readonly SharedActionsSystem _actionsSystem = default!;
-        [Dependency] private readonly SharedAudioSystem _audio = default!;
-        [Dependency] private readonly UseDelaySystem _delay = default!;
-        [Dependency] private readonly SharedTransformSystem _transform = default!;
-        [Dependency] private readonly SharedStunSystem _stun = default!;
-        [Dependency] private readonly EntityLookupSystem _lookUp = default!;
-        [Dependency] private readonly MetaDataSystem _metaData = default!;
+        [Dependency] private IRobustRandom _random = default!;
+        [Dependency] private ActionBlockerSystem _blocker = default!;
+        [Dependency] private DamageableSystem _damageableSystem = default!;
+        [Dependency] private InventorySystem _invSystem = default!;
+        [Dependency] private MobStateSystem _mobStateSystem = default!;
+        [Dependency] private PopupSystem _popupSystem = default!;
+        [Dependency] private SharedActionsSystem _actionsSystem = default!;
+        [Dependency] private SharedAudioSystem _audio = default!;
+        [Dependency] private UseDelaySystem _delay = default!;
+        [Dependency] private SharedTransformSystem _transform = default!;
 
         public override void Initialize()
         {
             base.Initialize();
 
             SubscribeLocalEvent<BibleComponent, AfterInteractEvent>(OnAfterInteract);
-            SubscribeLocalEvent<BibleComponent, EntGotInsertedIntoContainerMessage>(OnInsertedContainer);
             SubscribeLocalEvent<SummonableComponent, GetVerbsEvent<AlternativeVerb>>(AddSummonVerb);
             SubscribeLocalEvent<SummonableComponent, GetItemActionsEvent>(GetSummonAction);
             SubscribeLocalEvent<SummonableComponent, SummonActionEvent>(OnSummon);
             SubscribeLocalEvent<FamiliarComponent, MobStateChangedEvent>(OnFamiliarDeath);
             SubscribeLocalEvent<FamiliarComponent, GhostRoleSpawnerUsedEvent>(OnSpawned);
-        }
-
-        private void OnInsertedContainer(EntityUid uid, BibleComponent component, EntGotInsertedIntoContainerMessage args)
-        {
-            //If an unholy creature picks up the bible, knock them down
-            if (HasComp<UnholyComponent>(args.Container.Owner))
-            {
-                Timer.Spawn(500, () =>
-                {
-                    _stun.TryAddParalyzeDuration(args.Container.Owner, TimeSpan.FromSeconds(10));
-                    _damageableSystem.TryChangeDamage(args.Container.Owner, component.DamageOnUnholyUse);
-                    _audio.PlayPvs(component.SizzleSoundPath, args.Container.Owner);
-                });
-            }
         }
 
         private readonly Queue<EntityUid> _addQueue = new();
@@ -146,23 +124,6 @@ namespace Content.Server.Bible
             var userEnt = Identity.Entity(args.User, EntityManager);
             var targetEnt = Identity.Entity(args.Target.Value, EntityManager);
 
-            // Sunrise-start
-            if (HasComp<UnholyComponent>(args.Target))
-            {
-                _damageableSystem.TryChangeDamage(args.Target.Value, component.DamageUnholy, true, origin: uid);
-
-                var othersUnholyMessage = Loc.GetString(component.LocPrefix + "-damage-unholy-others", ("user", Identity.Entity(args.User, EntityManager)), ("target", Identity.Entity(args.Target.Value, EntityManager)), ("bible", uid));
-                _popupSystem.PopupEntity(othersUnholyMessage, args.User, Filter.PvsExcept(args.User), true, PopupType.MediumCaution);
-
-                var selfUnholyMessage = Loc.GetString(component.LocPrefix + "-damage-unholy-self", ("target", Identity.Entity(args.Target.Value, EntityManager)), ("bible", uid));
-                _popupSystem.PopupEntity(selfUnholyMessage, args.User, args.User, PopupType.LargeCaution);
-
-                _delay.TryResetDelay((uid, useDelay));
-
-                return;
-            }
-            // Sunrise-end
-
             // This only has a chance to fail if the target is not wearing anything on their head and is not a familiar..
             if (!_invSystem.TryGetSlotEntity(args.Target.Value, "head", out _) && !HasComp<FamiliarComponent>(args.Target.Value))
             {
@@ -191,6 +152,9 @@ namespace Content.Server.Bible
 
                 _audio.PlayPvs(component.HealSoundPath, args.User);
                 _delay.TryResetDelay((uid, useDelay));
+
+                if (component.HealingLightEffect.HasValue)
+                    Spawn(component.HealingLightEffect.Value, new EntityCoordinates(args.Target.Value, default));
             }
             else
             {

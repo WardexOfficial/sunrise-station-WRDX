@@ -34,16 +34,15 @@ namespace Content.Shared.Bed.Sleep;
 
 public sealed partial class SleepingSystem : EntitySystem
 {
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
-    [Dependency] private readonly SharedActionsSystem _actionsSystem = default!;
-    [Dependency] private readonly ActionContainerSystem _actionContainer = default!;
-    [Dependency] private readonly BlindableSystem _blindableSystem = default!;
-    [Dependency] private readonly SharedPopupSystem _popupSystem = default!;
-    [Dependency] private readonly SharedAudioSystem _audio = default!;
-    [Dependency] private readonly SharedEmitSoundSystem _emitSound = default!;
-    [Dependency] private readonly StatusEffectsSystem _statusEffect = default!;
-    [Dependency] private readonly SharedStunSystem _stun = default!;
-    [Dependency] private readonly StandingStateSystem _standing = default!;
+    [Dependency] private IGameTiming _gameTiming = default!;
+    [Dependency] private SharedActionsSystem _actionsSystem = default!;
+    [Dependency] private BlindableSystem _blindableSystem = default!;
+    [Dependency] private SharedPopupSystem _popupSystem = default!;
+    [Dependency] private SharedAudioSystem _audio = default!;
+    [Dependency] private SharedEmitSoundSystem _emitSound = default!;
+    [Dependency] private StatusEffectsSystem _statusEffect = default!;
+    [Dependency] private SharedStunSystem _stun = default!;
+    [Dependency] private StandingStateSystem _standing = default!;
 
     public static readonly EntProtoId SleepActionId = "ActionSleep";
     public static readonly EntProtoId WakeActionId = "ActionWake";
@@ -63,7 +62,7 @@ public sealed partial class SleepingSystem : EntitySystem
         SubscribeLocalEvent<SleepingComponent, EntityZombifiedEvent>(OnZombified);
         SubscribeLocalEvent<SleepingComponent, MobStateChangedEvent>(OnMobStateChanged);
         SubscribeLocalEvent<SleepingComponent, ComponentInit>(OnCompInit);
-        SubscribeLocalEvent<SleepingComponent, ComponentRemove>(OnComponentRemoved);
+        SubscribeLocalEvent<SleepingComponent, ComponentShutdown>(OnComponentShutdown);
         SubscribeLocalEvent<SleepingComponent, RejuvenateEvent>(OnRejuvenate);
         SubscribeLocalEvent<SleepingComponent, SpeakAttemptEvent>(OnSpeakAttempt);
         SubscribeLocalEvent<SleepingComponent, CanSeeAttemptEvent>(OnSeeAttempt);
@@ -154,7 +153,7 @@ public sealed partial class SleepingSystem : EntitySystem
         _actionsSystem.AddAction(ent, ref ent.Comp.WakeAction, WakeActionId, ent);
     }
 
-    private void OnComponentRemoved(Entity<SleepingComponent> ent, ref ComponentRemove args)
+    private void OnComponentShutdown(Entity<SleepingComponent> ent, ref ComponentShutdown args)
     {
         _actionsSystem.RemoveAction(ent.Owner, ent.Comp.WakeAction);
 
@@ -166,7 +165,6 @@ public sealed partial class SleepingSystem : EntitySystem
 
     private void OnSpeakAttempt(Entity<SleepingComponent> ent, ref SpeakAttemptEvent args)
     {
-        // TODO reduce duplication of this behavior with MobStateSystem somehow
         if (HasComp<AllowNextCritSpeechComponent>(ent))
         {
             RemCompDeferred<AllowNextCritSpeechComponent>(ent);
@@ -184,28 +182,32 @@ public sealed partial class SleepingSystem : EntitySystem
 
     private void OnPointAttempt(Entity<SleepingComponent> ent, ref PointAttemptEvent args)
     {
-        args.Cancel();
+        if (ent.Comp.LifeStage <= ComponentLifeStage.Running)
+            args.Cancel();
     }
 
     private void OnSlip(Entity<SleepingComponent> ent, ref SlipAttemptEvent args)
     {
-        args.NoSlip = true;
+        if (ent.Comp.LifeStage <= ComponentLifeStage.Running)
+            args.NoSlip = true;
     }
 
     private void OnConsciousAttempt(Entity<SleepingComponent> ent, ref ConsciousAttemptEvent args)
     {
-        args.Cancelled = true;
+        if (ent.Comp.LifeStage <= ComponentLifeStage.Running)
+            args.Cancelled = true;
     }
 
     private void OnStunEndAttempt(Entity<SleepingComponent> ent, ref StunEndAttemptEvent args)
     {
-        args.Cancelled = true;
+        if (ent.Comp.LifeStage <= ComponentLifeStage.Running)
+            args.Cancelled = true;
     }
 
     private void OnStandUpAttempt(Entity<SleepingComponent> ent, ref StandUpAttemptEvent args)
     {
-        // Shh the Urist McHands is sleeping...
-        args.Cancelled = true;
+        if (ent.Comp.LifeStage <= ComponentLifeStage.Running)
+            args.Cancelled = true;
     }
 
     private void OnExamined(Entity<SleepingComponent> ent, ref ExaminedEvent args)

@@ -1,4 +1,4 @@
-﻿using Content.Shared._Sunrise.AnnouncementSpeaker.Events;
+using Content.Shared._Sunrise.AnnouncementSpeaker.Events;
 using Content.Shared._Sunrise.SunriseCCVars;
 using Content.Shared._Sunrise.TTS;
 using Content.Shared.Ghost;
@@ -20,16 +20,16 @@ namespace Content.Client._Sunrise.TTS;
 /// Plays TTS audio in world
 /// </summary>
 // ReSharper disable once InconsistentNaming
-public sealed class TTSSystem : EntitySystem
+public sealed partial class TTSSystem : EntitySystem
 {
-    [Dependency] private readonly IConfigurationManager _cfg = default!;
-    [Dependency] private readonly IResourceManager _res = default!;
-    [Dependency] private readonly AudioSystem _audio = default!;
-    [Dependency] private readonly IResourceCache _resourceCache = default!;
-    [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
-    [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly INetManager _netManager = default!;
-    [Dependency] private readonly SharedTransformSystem _xformSystem = default!;
+    [Dependency] private IConfigurationManager _cfg = default!;
+    [Dependency] private IResourceManager _res = default!;
+    [Dependency] private AudioSystem _audio = default!;
+    [Dependency] private IResourceCache _resourceCache = default!;
+    [Dependency] private IDependencyCollection _dependencyCollection = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private INetManager _netManager = default!;
+    [Dependency] private SharedTransformSystem _xformSystem = default!;
 
     private ISawmill _sawmill = default!;
     private static readonly MemoryContentRoot ContentRoot = new();
@@ -43,6 +43,7 @@ public sealed class TTSSystem : EntitySystem
     private bool _ttsClientEnable;
     private readonly Queue<QueuedTts> _ttsQueue = new();
     private (EntityUid Entity, AudioComponent Component)? _currentPlaying;
+    private readonly Dictionary<TTSPlaybackGroup, (EntityUid Entity, AudioComponent Component)> _groupedPlaying = new();
     private static readonly AudioResource EmptyAudioResource = new();
 
     public sealed class QueuedTts(byte[] data, TtsType ttsType)
@@ -67,6 +68,7 @@ public sealed class TTSSystem : EntitySystem
         _cfg.OnValueChanged(SunriseCCVars.TTSClientQueueEnabled, OnTTSQueueOptionChanged, true);
         _cfg.OnValueChanged(SunriseCCVars.TTSRadioGhostEnabled, OnTtsRadioGhostChanged, true);
         SubscribeNetworkEvent<PlayTTSEvent>(OnPlayTTS);
+        SubscribeNetworkEvent<StopTTSEvent>(OnStopTTS);
         SubscribeNetworkEvent<PlayMultiSpeakerTTSEvent>(OnPlayMultiSpeakerTTS);
     }
 
@@ -81,6 +83,7 @@ public sealed class TTSSystem : EntitySystem
 
         ContentRoot.Clear();
         _currentPlaying = null;
+        _groupedPlaying.Clear();
         _ttsQueue.Clear();
 
         _netManager.Connected += OnConnected;
@@ -152,6 +155,9 @@ public sealed class TTSSystem : EntitySystem
     {
         var volume = ev.IsRadio ? _radioVolume : _volume;
 
+        if (ev.PlaybackGroup != TTSPlaybackGroup.None)
+            StopTtsPlaybackGroup(ev.PlaybackGroup);
+
         if (volume == 0)
             return;
 
@@ -161,7 +167,7 @@ public sealed class TTSSystem : EntitySystem
             if (!_ghostRadioEnabled && localEntity.HasValue && HasComp<GhostComponent>(localEntity.Value))
                 return;
 
-            if (_isQueueEnabled)
+            if (_isQueueEnabled && ev.PlaybackGroup == TTSPlaybackGroup.None)
             {
                 var entry = new QueuedTts(ev.Data, TtsType.Radio);
 
@@ -175,7 +181,34 @@ public sealed class TTSSystem : EntitySystem
         var audioParams = AudioParams.Default.WithVolume(volume);
 
         var entity = GetEntity(ev.SourceUid);
-        PlayTTSBytes(ev.Data, entity, audioParams);
+        var playing = PlayTTSBytes(ev.Data, entity, audioParams);
+        TrackTtsPlaybackGroup(ev.PlaybackGroup, playing);
+    }
+
+    private void OnStopTTS(StopTTSEvent ev)
+    {
+        StopTtsPlaybackGroup(ev.PlaybackGroup);
+    }
+
+    private void TrackTtsPlaybackGroup(
+        TTSPlaybackGroup playbackGroup,
+        (EntityUid Entity, AudioComponent Component)? playing)
+    {
+        if (playbackGroup == TTSPlaybackGroup.None || playing == null)
+            return;
+
+        _groupedPlaying[playbackGroup] = playing.Value;
+    }
+
+    private void StopTtsPlaybackGroup(TTSPlaybackGroup playbackGroup)
+    {
+        if (playbackGroup == TTSPlaybackGroup.None)
+            return;
+
+        if (!_groupedPlaying.Remove(playbackGroup, out var playing))
+            return;
+
+        _audio.Stop(playing.Entity, playing.Component);
     }
 
     private (AudioResource Resource, ResPath FilePath)? AddTtsAudioResource(byte[] data)

@@ -1,3 +1,4 @@
+using Content.Shared.Inventory;
 using Robust.Shared.Serialization;
 
 namespace Content.Shared.VoiceMask;
@@ -9,17 +10,21 @@ public enum VoiceMaskUIKey : byte
 }
 
 [Serializable, NetSerializable]
-public sealed class VoiceMaskBuiState : BoundUserInterfaceState
+public sealed partial class VoiceMaskBuiState : BoundUserInterfaceState // Sunrise-Edit: состояние расширяется данными TTS в partial.
 {
     public readonly string Name;
     public readonly string? Verb;
-    public readonly string Voice; // Sunrise-TTS
+    public readonly bool Active;
+    public readonly bool AccentHide;
+    public readonly LocId TitleText;
 
-    public VoiceMaskBuiState(string name, string voice, string? verb)
+    public VoiceMaskBuiState(string name, string? verb, bool active, bool accentHide, LocId titleText)
     {
         Name = name;
         Verb = verb;
-        Voice = voice;  // Sunrise-TTS
+        Active = active;
+        AccentHide = accentHide;
+        TitleText = titleText;
     }
 }
 
@@ -46,4 +51,32 @@ public sealed class VoiceMaskChangeVerbMessage : BoundUserInterfaceMessage
     {
         Verb = verb;
     }
+}
+
+/// <summary>
+///     Toggle the effects of the voice mask.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class VoiceMaskToggleMessage : BoundUserInterfaceMessage;
+
+/// <summary>
+///     Toggle the effects of accent negation.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class VoiceMaskAccentToggleMessage : BoundUserInterfaceMessage;
+
+/// <summary>
+///  Fired when a voice mask is turned on.
+/// </summary>
+/// <param name="mask">The voice mask that was turned on</param>
+/// <param name="source">The entity that owns the voice mask</param>
+/// <param name="active">The new value of the voice mask</param>
+public sealed class VoiceMaskToggledEvent(EntityUid mask, EntityUid source, bool active) : IInventoryRelayEvent
+{
+    public EntityUid Mask = mask;
+    public EntityUid Source = source;
+
+    public bool Active = active;
+
+    SlotFlags IInventoryRelayEvent.TargetSlots => SlotFlags.WITHOUT_POCKET;
 }

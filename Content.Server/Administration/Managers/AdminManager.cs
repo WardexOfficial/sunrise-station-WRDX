@@ -24,16 +24,16 @@ namespace Content.Server.Administration.Managers
 {
     public sealed partial class AdminManager : IAdminManager, IPostInjectInit, IConGroupControllerImplementation
     {
-        [Dependency] private readonly IPlayerManager _playerManager = default!;
-        [Dependency] private readonly IServerDbManager _dbManager = default!;
-        [Dependency] private readonly IConfigurationManager _cfg = default!;
-        [Dependency] private readonly IServerNetManager _netMgr = default!;
-        [Dependency] private readonly IConGroupController _conGroup = default!;
-        [Dependency] private readonly IResourceManager _res = default!;
-        [Dependency] private readonly IServerConsoleHost _consoleHost = default!;
-        [Dependency] private readonly IChatManager _chat = default!;
-        [Dependency] private readonly ToolshedManager _toolshed = default!;
-        [Dependency] private readonly ILogManager _logManager = default!;
+        [Dependency] private IPlayerManager _playerManager = default!;
+        [Dependency] private IServerDbManager _dbManager = default!;
+        [Dependency] private IConfigurationManager _cfg = default!;
+        [Dependency] private IServerNetManager _netMgr = default!;
+        [Dependency] private IConGroupController _conGroup = default!;
+        [Dependency] private IResourceManager _res = default!;
+        [Dependency] private IServerConsoleHost _consoleHost = default!;
+        [Dependency] private IChatManager _chat = default!;
+        [Dependency] private ToolshedManager _toolshed = default!;
+        [Dependency] private ILogManager _logManager = default!;
 
         private readonly Dictionary<ICommonSession, AdminReg> _admins = new();
         private readonly HashSet<NetUserId> _promotedPlayers = new();
@@ -99,7 +99,10 @@ namespace Content.Server.Administration.Managers
             _chat.SendAdminAnnouncement(Loc.GetString("admin-manager-self-de-admin-message", ("exAdminName", session.Name)));
             _chat.DispatchServerMessage(session, Loc.GetString("admin-manager-became-normal-player-message"));
 
-            UpdateDatabaseDeadminnedState(session, true);
+            // Sunrise edit start - внешние админы хранят deadmin только в runtime state.
+            if (ShouldPersistSunriseDeadminState(session))
+                UpdateDatabaseDeadminnedState(session, true);
+            // Sunrise edit end
             reg.Data.Active = false;
 
             SendPermsChangedEvent(session);
@@ -174,7 +177,10 @@ namespace Content.Server.Administration.Managers
 
             _chat.DispatchServerMessage(session, Loc.GetString("admin-manager-became-admin-message"));
 
-            UpdateDatabaseDeadminnedState(session, false);
+            // Sunrise edit start - внешние админы хранят deadmin только в runtime state.
+            if (ShouldPersistSunriseDeadminState(session))
+                UpdateDatabaseDeadminnedState(session, false);
+            // Sunrise edit end
             reg.Data.Active = true;
 
             if (!reg.Data.Stealth)
@@ -227,9 +233,14 @@ namespace Content.Server.Administration.Managers
                 else
                 {
                     // Perms changed.
+                    // Sunrise edit start - внешние админы сохраняют runtime deadmin state между RBAC reloads.
+                    var wasActive = curAdmin.Data.Active;
                     curAdmin.IsSpecialLogin = special;
                     curAdmin.RankId = rankId;
                     curAdmin.Data = aData;
+                    if (ShouldKeepSunriseRuntimeDeadminState(special))
+                        curAdmin.Data.Active = wasActive;
+                    // Sunrise edit end
 
                     if (curAdmin.Data.Active)
                     {
@@ -316,6 +327,7 @@ namespace Content.Server.Administration.Managers
             _toolshed.ActivePermissionController = this;
 
             InitializeMetrics();
+            InitializeSunriseAdmin(); // Sunrise-Edit
         }
 
         public void PromoteHost(ICommonSession player)
@@ -461,6 +473,14 @@ namespace Content.Server.Administration.Managers
 
         public async Task<(AdminData dat, int? rankId, bool specialLogin)?> LoadAdminData(NetUserId session)
         {
+            // Sunrise edit start - режим Stellar RBAC может заменить local admin DB, когда включен.
+            if (await TryLoadSunriseExternalAdminData(session) is { } externalAdminData)
+                return externalAdminData;
+
+            if (UsesSunriseExternalAdminPermissions())
+                return null;
+            // Sunrise edit end
+
             var dbData = await _dbManager.GetAdminDataForAsync(session);
 
             if (dbData == null)

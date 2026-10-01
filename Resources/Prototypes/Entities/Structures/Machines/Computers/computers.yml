@@ -49,10 +49,6 @@
   - type: AtmosAlertsComputer
     beepSound:
       path: /Audio/_Sunrise/Effects/beeps.ogg
-      # Sunrise - Start
-      params:
-        volume: -5
-      # Sunrise - End
   - type: ActivatableUI
     singleUser: true
     key: enum.AtmosAlertsComputerUiKey.Key
@@ -144,8 +140,6 @@
         enum.WiresUiKey.Key:
           type: WiresBoundUserInterface
   - type: RadarConsole
-  - type: WorldLoader
-    radius: 256
   - type: PointLight
     radius: 1.5
     energy: 4.0
@@ -214,8 +208,6 @@
       - Syndicate
   - type: RadarConsole
     maxRange: 384
-  - type: WorldLoader
-    radius: 1536
   - type: PointLight
     radius: 1.5
     energy: 4.0
@@ -297,6 +289,7 @@
     allowedFlags:
       - Hide
       - HideLabel
+    hideOnInit: true
   - type: ActivatableUI
     key: enum.IFFConsoleUiKey.Key
   - type: UserInterface
@@ -519,11 +512,14 @@
       enum.WiresUiKey.Key:
         type: WiresBoundUserInterface
   - type: ApcPowerReceiver
-    powerLoad: 1000
+    powerLoad: 50
+  - type: PowerState
+    idlePowerDraw: 50
+    workingPowerDraw: 1000
   - type: Computer
     board: ResearchComputerCircuitboard
   - type: AccessReader
-    access: [["ResearchConsoleAccess"]]
+    access: [["Research"]]
   - type: PointLight
     radius: 1.5
     energy: 4.0
@@ -570,7 +566,10 @@
       enum.WiresUiKey.Key:
         type: WiresBoundUserInterface
   - type: ApcPowerReceiver
-    powerLoad: 1000
+    powerLoad: 50
+  - type: PowerState
+    idlePowerDraw: 50
+    workingPowerDraw: 1000
   - type: Computer
     board: AnalysisComputerCircuitboard
   - type: PointLight
@@ -694,6 +693,7 @@
       - Service
       - Theatre
       - NuclearOperative
+      - Pirate # Sunrise-Edit
       - SyndicateAgent
   - type: ActivatableUI
     key: enum.IdCardConsoleUiKey.Key
@@ -736,8 +736,6 @@
   name: body scanner computer
   description: A body scanner.
   components:
-  - type: ApcPowerReceiver
-    powerLoad: 500
   - type: Computer
     board: BodyScannerComputerCircuitboard
   - type: PointLight
@@ -785,8 +783,9 @@
     energy: 4.0
     color: "#3c5eb5"
   - type: Damageable
-    damageContainer: StructuralInorganic
     damageModifierSet: StructuralMetallicStrong
+  - type: Injurable
+    damageContainer: StructuralInorganic
 
 - type: entity
   parent: ComputerComms
@@ -999,7 +998,7 @@
     energy: 4.0
     color: "#b89f25"
   - type: AccessReader
-    access: [["CargoPurchaseAccess"]] # Sunrise-Edit
+    access: [["Cargo"]]
   - type: DeviceNetwork
     deviceNetId: Wireless
     receiveFrequencyId: BasicDevice
@@ -1036,7 +1035,7 @@
     account: Engineering
     announcementChannel: Engineering
     removeLimitAccess: [ "ChiefEngineer" ]
-    mode: SendToPrimary
+    #mode: SendToPrimary # Sunrise-Edit
   - type: ActiveRadio
     channels:
     - Engineering
@@ -1069,7 +1068,7 @@
     account: Medical
     announcementChannel: Medical
     removeLimitAccess: [ "ChiefMedicalOfficer" ]
-    mode: SendToPrimary
+    #mode: SendToPrimary # Sunrise-Edit
   - type: ActiveRadio
     channels:
     - Medical
@@ -1102,7 +1101,7 @@
     account: Science
     announcementChannel: Science
     removeLimitAccess: [ "ResearchDirector" ]
-    mode: SendToPrimary
+    #mode: SendToPrimary # Sunrise-Edit
   - type: ActiveRadio
     channels:
     - Science
@@ -1135,7 +1134,7 @@
     account: Security
     announcementChannel: Security
     removeLimitAccess: [ "HeadOfSecurity" ]
-    mode: SendToPrimary
+    #mode: SendToPrimary # Sunrise-Edit
   - type: ActiveRadio
     channels:
     - Security
@@ -1168,7 +1167,7 @@
     account: Service
     announcementChannel: Service
     removeLimitAccess: [ "HeadOfPersonnel" ]
-    mode: SendToPrimary
+    #mode: SendToPrimary # Sunrise-Edit
   - type: ActiveRadio
     channels:
     - Service
@@ -1278,8 +1277,6 @@
       state: generic_keys
     - map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
       state: generic_panel_open
-  - type: ApcPowerReceiver
-    powerLoad: 3100 #We want this to fail first so I transferred most of the scanner and pod's power here. (3500 in total)
   - type: Computer
     board: CloningConsoleComputerCircuitboard
   - type: PointLight
@@ -1303,8 +1300,9 @@
     speechVerb: Robotic
     speechSounds: Pai
   - type: Damageable
-    damageContainer: StructuralInorganic
     damageModifierSet: StructuralMetallicStrong
+  - type: Injurable
+    damageContainer: StructuralInorganic
   - type: GuideHelp
     guides:
     - Cloning
@@ -1659,7 +1657,11 @@
       enum.WiresUiKey.Key:
         type: WiresBoundUserInterface
   - type: ApcPowerReceiver
-    powerLoad: 1000
+    powerLoad: 5
+  - type: PowerState
+    idlePowerDraw: 5
+    workingPowerDraw: 1000
+  - type: UIPowerState
   - type: DeviceNetwork
     deviceNetId: Wireless
     receiveFrequencyId: RoboticsConsole
@@ -1704,7 +1706,10 @@
     channels:
     - Xenoborg
   - type: ApcPowerReceiver
-    powerLoad: 1000
+    powerLoad: 50
+  - type: PowerState
+    idlePowerDraw: 50
+    workingPowerDraw: 1000
   - type: DeviceNetwork
     deviceNetId: Wireless
     receiveFrequencyId: Mothership
@@ -1731,7 +1736,10 @@
     - map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
       state: generic_panel_open
   - type: ApcPowerReceiver
-    powerLoad: 1000
+    powerLoad: 50
+  - type: PowerState
+    idlePowerDraw: 50
+    workingPowerDraw: 1000
   - type: Computer
     board: StationAiUploadCircuitboard
   - type: AccessReader
@@ -1815,7 +1823,10 @@
           East, West: { state: computer_l_r, sprite: _Starlight/Structures/Machines/computers.rsi }
       # Sunrise-End
   - type: ApcPowerReceiver
-    powerLoad: 1000
+    powerLoad: 50
+  - type: PowerState
+    idlePowerDraw: 50
+    workingPowerDraw: 1000
   - type: Computer
     board: StationAiFixerCircuitboard
   - type: AccessReader
@@ -1850,3 +1861,41 @@
         type: StationAiFixerConsoleBoundUserInterface
       enum.WiresUiKey.Key:
         type: WiresBoundUserInterface
+
+- type: entity
+  parent: BaseComputer
+  id: ComputerNukieDelivery
+  name: syndicate delivery computer
+  description: "A computer that can bluespace in certain equipment for Nuclear Operations. \nThe circuitboard is integrated into the frame and can't be recovered if deconstructed."
+  components:
+  - type: Sprite
+    layers:
+    - map: ["computerLayerBody"]
+      state: computer
+    - map: ["computerLayerKeyboard"]
+      state: generic_keyboard
+    - map: ["computerLayerScreen"]
+      state: request-syndie
+    - map: ["computerLayerKeys"]
+      state: syndie_generic_keys
+    - map: [ "enum.WiresVisualLayers.MaintenancePanel" ]
+      state: generic_panel_open
+  # - type: Computer
+  #   board: SyndicateCommsComputerCircuitboard
+  - type: Anchorable
+    flags:
+    - Anchorable # No taking the console along!
+  - type: PointLight
+    radius: 1.5
+    energy: 1.6
+    color: "#f71713"
+  - type: UserInterface
+    interfaces:
+      enum.StoreUiKey.Key:
+        type: StoreBoundUserInterface
+  - type: ActivatableUI
+    key: enum.StoreUiKey.Key
+  - type: Store
+    name: store-preset-name-nukie-delivery
+    categories:
+    - NukieDelivery

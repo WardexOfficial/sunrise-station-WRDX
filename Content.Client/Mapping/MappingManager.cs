@@ -7,10 +7,10 @@ using Robust.Shared.Network;
 
 namespace Content.Client.Mapping;
 
-public sealed class MappingManager : IPostInjectInit
+public sealed partial class MappingManager : IPostInjectInit
 {
-    [Dependency] private readonly IFileDialogManager _file = default!;
-    [Dependency] private readonly IClientNetManager _net = default!;
+    [Dependency] private IFileDialogManager _file = default!;
+    [Dependency] private IClientNetManager _net = default!;
 
     private Stream? _saveStream;
     private MappingMapDataMessage? _mapData;
@@ -48,7 +48,7 @@ public sealed class MappingManager : IPostInjectInit
         if (_saveStream != null)
             await _saveStream.DisposeAsync();
 
-        // Sunrise added start - only request server-side map save processing after destination is confirmed
+        // Sunrise added start - запрашиваем серверную обработку сохранения карты только после подтверждения пути
         _mapData = null;
         // Sunrise added end
 
@@ -56,7 +56,7 @@ public sealed class MappingManager : IPostInjectInit
         if (path is not { fileStream: var stream })
             return;
 
-        // Sunrise added start - avoid mutating the map on the server when the save dialog is canceled
+        // Sunrise added start - не меняем карту на сервере, если диалог сохранения отменен
         _saveStream = stream;
 
         var request = new MappingSaveMapMessage();

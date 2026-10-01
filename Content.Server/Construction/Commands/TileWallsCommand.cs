@@ -12,10 +12,10 @@ using Robust.Shared.Prototypes;
 namespace Content.Server.Construction.Commands;
 
 [AdminCommand(AdminFlags.Mapping)]
-public sealed class TileWallsCommand : IConsoleCommand
+public sealed partial class TileWallsCommand : IConsoleCommand
 {
-    [Dependency] private readonly IEntityManager _entManager = default!;
-    [Dependency] private readonly ITileDefinitionManager _tileDefManager = default!;
+    [Dependency] private IEntityManager _entManager = default!;
+    [Dependency] private ITileDefinitionManager _tileDefManager = default!;
 
     // ReSharper disable once StringLiteralTypo
     public string Command => "tilewalls";
@@ -26,7 +26,7 @@ public sealed class TileWallsCommand : IConsoleCommand
     public static readonly ProtoId<TagPrototype> WallTag = "Wall";
     public static readonly ProtoId<TagPrototype> DiagonalTag = "Diagonal";
 
-    // Sunrise added start - allow prototypes to opt out from tilewalls underplating
+    // Sunrise added start - разрешаем прототипам отключать tilewalls underplating
     public static readonly ProtoId<TagPrototype> ForceNoTileWallsTag = "ForceNoTileWalls";
     // Sunrise added end
 
@@ -97,7 +97,7 @@ public sealed class TileWallsCommand : IConsoleCommand
                 continue;
             }
 
-            // Sunrise added start - allow prototypes to opt out from tilewalls underplating
+            // Sunrise added start - разрешаем прототипам отключать tilewalls underplating
             if (tagSystem.HasTag(child, ForceNoTileWallsTag))
                 continue;
             // Sunrise added end

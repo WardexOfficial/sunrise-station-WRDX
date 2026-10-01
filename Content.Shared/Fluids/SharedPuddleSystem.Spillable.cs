@@ -23,7 +23,7 @@ namespace Content.Shared.Fluids;
 public abstract partial class SharedPuddleSystem
 {
     private static readonly FixedPoint2 MeleeHitTransferProportion = 0.25;
-    [Dependency] private readonly InjectorSystem _injectorSystem = default!;
+    [Dependency] private InjectorSystem _injectorSystem = default!;
 
     protected virtual void InitializeSpillable()
     {
@@ -80,7 +80,7 @@ public abstract partial class SharedPuddleSystem
                 // Injectors should not be hardcoded here.
                 if (TryComp<InjectorComponent>(entity, out var injectorComp)
                     && _prototypeManager.Resolve(injectorComp.ActiveModeProtoId, out var activeMode)
-                    && !activeMode.Behavior.HasFlag(InjectorBehavior.Draw))
+                    && !activeMode.Behavior.HasAnyFlag(InjectorBehavior.Draw | InjectorBehavior.Dynamic))
                 {
                     foreach (var mode in injectorComp.AllowedModes)
                     {

@@ -13,11 +13,11 @@
   startingGear: IAAGear
   icon: "JobIconIAA"
   supervisors: job-supervisors-magistrate
-  canBeAntag: false
   displayWeight: 40
   alternativeTitles:
   - job-alt-title-inspector
   access:
+  - IAA
   - Command
   - Service
   - Brig

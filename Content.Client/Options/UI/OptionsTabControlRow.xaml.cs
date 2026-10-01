@@ -48,8 +48,8 @@ namespace Content.Client.Options.UI;
 [GenerateTypedNameReferences]
 public sealed partial class OptionsTabControlRow : Control
 {
-    [Dependency] private readonly ILocalizationManager _loc = default!;
-    [Dependency] private readonly IConfigurationManager _cfg = default!;
+    [Dependency] private ILocalizationManager _loc = default!;
+    [Dependency] private IConfigurationManager _cfg = default!;
 
     private ValueList<BaseOption> _options;
 
@@ -209,7 +209,7 @@ public sealed partial class OptionsTabControlRow : Control
         UpdateButtonState();
     }
 
-    // Sunrise added start - allow UI refreshes without implying a user edit
+    // Sunrise added start - разрешаем обновления UI без признака пользовательского изменения
     /// <summary>
     /// <see cref="RefreshButtonState"/> updates the options buttons without implying user-driven edits.
     /// </summary>

@@ -1,4 +1,4 @@
-﻿using Content.Shared.StatusEffectNew;
+using Content.Shared.StatusEffectNew;
 using Robust.Shared.Prototypes;
 
 namespace Content.Shared.EntityEffects.Effects.StatusEffects;
@@ -10,7 +10,7 @@ namespace Content.Shared.EntityEffects.Effects.StatusEffects;
 /// <inheritdoc cref="EntityEffectSystem{T,TEffect}"/>
 public sealed partial class ModifyStatusEffectEntityEffectSystem : EntityEffectSystem<MetaDataComponent, ModifyStatusEffect>
 {
-    [Dependency] private readonly StatusEffectsSystem _status = default!;
+    [Dependency] private StatusEffectsSystem _status = default!;
 
     protected override void Effect(Entity<MetaDataComponent> entity, ref EntityEffectEvent<ModifyStatusEffect> args)
     {
@@ -53,13 +53,13 @@ public sealed partial class ModifyStatusEffect : BaseStatusEntityEffect<ModifySt
                 "entity-effect-guidebook-status-effect-indef",
                 ("chance", Probability),
                 ("type", Type),
-                ("key", prototype.Index(EffectProto).Name),
+                ("key", $"ent-{EffectProto}"), // Sunrise-Edit
                 ("delay", Delay.TotalSeconds))
             : Loc.GetString(
                 "entity-effect-guidebook-status-effect",
                 ("chance", Probability),
                 ("type", Type),
                 ("time", Time.Value.TotalSeconds),
-                ("key", prototype.Index(EffectProto).Name),
+                ("key", $"ent-{EffectProto}"), // Sunrise-Edit
                 ("delay", Delay.TotalSeconds));
 }

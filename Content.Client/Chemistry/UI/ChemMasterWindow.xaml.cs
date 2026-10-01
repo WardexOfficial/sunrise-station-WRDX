@@ -23,8 +23,8 @@ namespace Content.Client.Chemistry.UI
     [GenerateTypedNameReferences]
     public sealed partial class ChemMasterWindow : FancyWindow
     {
-        [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
-        [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private IPrototypeManager _prototypeManager = default!;
+        [Dependency] private IEntityManager _entityManager = default!;
 
         private readonly SpriteSystem _sprite;
 
@@ -86,10 +86,10 @@ namespace Content.Client.Chemistry.UI
 
             PillDosage.InitDefaultButtons();
             PillNumber.InitDefaultButtons();
-            // Starlight-start
+            // Sunrise-Edit start - patch fields init
             PatchDosage.InitDefaultButtons();
             PatchNumber.InitDefaultButtons();
-            // Starlight-end
+            // Sunrise-Edit end
             BottleDosage.InitDefaultButtons();
 
             // Ensure label length is within the character limit.
@@ -122,10 +122,10 @@ namespace Content.Client.Chemistry.UI
                 ("10", ChemMasterReagentAmount.U10, StyleClass.ButtonOpenBoth),
                 ("15", ChemMasterReagentAmount.U15, StyleClass.ButtonOpenBoth),
                 ("20", ChemMasterReagentAmount.U20, StyleClass.ButtonOpenBoth),
-                ("25", ChemMasterReagentAmount.U25, StyleClass.ButtonOpenBoth),
                 ("30", ChemMasterReagentAmount.U30, StyleClass.ButtonOpenBoth),
-                ("50", ChemMasterReagentAmount.U50, StyleClass.ButtonOpenBoth),
-                ("100", ChemMasterReagentAmount.U100, StyleClass.ButtonOpenBoth),
+                ("40", ChemMasterReagentAmount.U40, StyleClass.ButtonOpenBoth),
+                ("60", ChemMasterReagentAmount.U60, StyleClass.ButtonOpenBoth),
+                ("120", ChemMasterReagentAmount.U120, StyleClass.ButtonOpenBoth),
                 (Loc.GetString("chem-master-window-buffer-all-amount"), ChemMasterReagentAmount.All, StyleClass.ButtonOpenLeft),
             };
 
@@ -147,24 +147,32 @@ namespace Content.Client.Chemistry.UI
         public void UpdateState(BoundUserInterfaceState state)
         {
             var castState = (ChemMasterBoundUserInterfaceState)state;
-            // Starlight Start
-            var outputCreationSolutionVariable = new Label
-            {
-                Text = $" {castState.InputContainerInfo?.CurrentVolume ?? 0}u",
-            }; //Starlight End Creates a variable for how much solution is in the input beaker to be used for Pill/Patches creation
 
             if (castState.UpdateLabel)
                 LabelLine = GenerateLabel(castState);
 
             // Ensure the Panel Info is updated, including UI elements for Buffer Volume, Output Container and so on
             UpdatePanelInfo(castState);
-            BufferCurrentVolume.Text = outputCreationSolutionVariable.Text; // Starlight Beaker Changes for Pills/Patches creation
+
+            switch (castState.DrawSource)
+            {
+                case ChemMasterDrawSource.Internal:
+                    SetBufferText(castState.BufferCurrentVolume, "chem-master-output-buffer-draw");
+                    break;
+                case ChemMasterDrawSource.External:
+                    SetBufferText(castState.InputContainerInfo?.CurrentVolume, "chem-master-output-beaker-draw");
+                    break;
+                default:
+                    throw new($"Chemmaster {castState.OutputContainerInfo} draw source is not set");
+            }
 
             InputEjectButton.Disabled = castState.InputContainerInfo is null;
             OutputEjectButton.Disabled = castState.OutputContainerInfo is null;
             CreateBottleButton.Disabled = castState.OutputContainerInfo?.Reagents == null;
             CreatePillButton.Disabled = castState.OutputContainerInfo?.Entities == null;
-            CreatePatchButton.Disabled = castState.OutputContainerInfo?.Entities == null; // Starlight-edit
+            // Sunrise-Edit start - disable create button if no container is loaded
+            CreatePatchButton.Disabled = castState.OutputContainerInfo?.Entities == null;
+            // Sunrise-Edit end
 
             UpdateDosageFields(castState);
         }
@@ -177,62 +185,80 @@ namespace Content.Client.Chemistry.UI
             var holdsReagents = output?.Reagents != null;
             var pillNumberMax = holdsReagents ? 0 : remainingCapacity;
             var bottleAmountMax = holdsReagents ? remainingCapacity : 0;
-            var beakerVolume = castState.InputContainerInfo?.CurrentVolume.Int() ?? 0;
+            var outputVolume = castState.DrawSource switch
+            {
+                ChemMasterDrawSource.Internal => castState.BufferCurrentVolume?.Int() ?? 0,
+                ChemMasterDrawSource.External => castState.InputContainerInfo?.CurrentVolume.Int() ?? 0,
+                _ => 0,
+            };
 
-            PillDosage.Value = (int)Math.Min(beakerVolume, castState.PillDosageLimit); // Starlight-edit
-            PatchDosage.Value = (int)Math.Min(beakerVolume, castState.PatchDosageLimit); // Starlight-edit
+            PillDosage.Value = (int)Math.Min(outputVolume, castState.PillDosageLimit);
+            // Sunrise-Edit start - update patch dosage limits
+            PatchDosage.Value = (int)Math.Min(outputVolume, castState.PatchDosageLimit);
+            // Sunrise-Edit end
 
             PillTypeButtons[castState.SelectedPillType].Pressed = true;
 
             PillNumber.IsValid = x => x >= 0 && x <= pillNumberMax;
             PillDosage.IsValid = x => x > 0 && x <= castState.PillDosageLimit;
-            // Starlight-start
+            // Sunrise-Edit start - validate patch limits
             PatchNumber.IsValid = x => x >= 0 && x <= pillNumberMax;
             PatchDosage.IsValid = x => x > 0 && x <= castState.PatchDosageLimit;
-            // Starlight-end
+            // Sunrise-Edit end
             BottleDosage.IsValid = x => x >= 0 && x <= bottleAmountMax;
 
             if (PillNumber.Value > pillNumberMax)
                 PillNumber.Value = pillNumberMax;
             if (BottleDosage.Value > bottleAmountMax)
                 BottleDosage.Value = bottleAmountMax;
-
+            // Sunrise-Edit start - clamp patch quantity
             if (PatchNumber.Value > pillNumberMax)
                 PatchNumber.Value = pillNumberMax;
+            // Sunrise-Edit end
 
             // Avoid division by zero
             if (PillDosage.Value > 0)
             {
-                PillNumber.Value = Math.Min(beakerVolume / PillDosage.Value, pillNumberMax);
+                PillNumber.Value = Math.Min(outputVolume / PillDosage.Value, pillNumberMax);
             }
             else
             {
                 PillNumber.Value = 0;
             }
 
-            // Starlight-start
+            // Sunrise-Edit start - patch count calculation
             if (PatchDosage.Value > 0)
             {
-                PatchNumber.Value = Math.Min(beakerVolume / PatchDosage.Value, pillNumberMax);
+                PatchNumber.Value = Math.Min(outputVolume / PatchDosage.Value, pillNumberMax);
             }
             else
             {
                 PatchNumber.Value = 0;
             }
+            // Sunrise-Edit end
 
-            BottleDosage.Value = Math.Min(bottleAmountMax, beakerVolume);
-            // Starlight-end
+            BottleDosage.Value = Math.Min(bottleAmountMax, outputVolume);
         }
         /// <summary>
-        /// Generate a product label based on reagents in the buffer.
+        /// Generate a product label based on reagents in the buffer or beaker.
         /// </summary>
         /// <param name="state">State data sent by the server.</param>
         private string GenerateLabel(ChemMasterBoundUserInterfaceState state)
         {
-            if (state.BufferCurrentVolume == 0)
+            if (
+                state.BufferCurrentVolume == 0 && state.DrawSource == ChemMasterDrawSource.Internal ||
+                state.InputContainerInfo?.CurrentVolume == 0 && state.DrawSource == ChemMasterDrawSource.External ||
+                state.InputContainerInfo?.Reagents == null
+            )
                 return "";
 
-            var reagent = state.BufferReagents.OrderBy(r => r.Quantity).First().Reagent;
+            var reagent = (state.DrawSource switch
+                {
+                    ChemMasterDrawSource.Internal => state.BufferReagents,
+                    ChemMasterDrawSource.External => state.InputContainerInfo.Reagents ?? [],
+                    _ => throw new($"Chemmaster {state.OutputContainerInfo} draw source is not set"),
+                }).MinBy(r => r.Quantity)
+                .Reagent;
             _prototypeManager.TryIndex(reagent.Prototype, out ReagentPrototype? proto);
             return proto?.LocalizedName ?? "";
         }
@@ -261,6 +287,8 @@ namespace Content.Client.Chemistry.UI
                 _ => Loc.GetString("chem-master-window-sort-type-none")
             };
 
+            OutputBufferDraw.Pressed = state.DrawSource == ChemMasterDrawSource.Internal;
+            OutputBeakerDraw.Pressed = state.DrawSource == ChemMasterDrawSource.External;
 
             if (!state.BufferReagents.Any())
             {
@@ -441,6 +469,12 @@ namespace Content.Client.Chemistry.UI
         {
             get => LabelLineEdit.Text;
             set => LabelLineEdit.Text = value;
+        }
+
+        private void SetBufferText(FixedPoint2? volume, string text)
+        {
+            BufferCurrentVolume.Text = $" {volume ?? FixedPoint2.Zero}u";
+            DrawSource.Text = Loc.GetString(text);
         }
     }
 

@@ -403,7 +403,7 @@
   - type: Sprite
     sprite: Structures/Piping/Atmospherics/hellfirethermomachine.rsi
   - type: GasThermoMachine
-    minTemperature: 23.15
+    minTemperature: 13.15 # Sunrise-edit
     heatCapacity: 40000
     energyLeakPercentage: 0.15
   - type: Machine
@@ -418,14 +418,14 @@
   - type: Sprite
     sprite: Structures/Piping/Atmospherics/hellfirethermomachine.rsi
   - type: GasThermoMachine
-    maxTemperature: 1193.15
+    maxTemperature: 1593.15 # Sunrise-edit
     heatCapacity: 40000
     energyLeakPercentage: 0.15
   - type: Machine
     board: HellfireHeaterMachineCircuitBoard
 
 - type: entity
-  parent: [ BaseMachinePowered, SmallConstructibleMachine ]
+  parent: [ SolutionTank, SolutionHuge, BaseMachinePowered, SmallConstructibleMachine ]
   id: BaseGasCondenser
   name: condenser
   description: Condenses gases into liquids. Now we just need some plumbing.
@@ -503,10 +503,6 @@
         pipeDirection: South
   - type: Transform
     noRot: false
-  - type: SolutionContainerManager
-    solutions:
-      tank:
-        maxVol: 400
   - type: MixableSolution
     solution: tank
   - type: DrainableSolution

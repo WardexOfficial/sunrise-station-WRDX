@@ -1,4 +1,5 @@
 using System.Linq;
+using Content.Server._Sunrise.MapperSync;
 using Content.Server.Administration;
 using Content.Server.GameTicking;
 using Content.Shared.Administration;
@@ -13,12 +14,13 @@ using Robust.Shared.Utility;
 namespace Content.Server.Mapping
 {
     [AdminCommand(AdminFlags.Mapping)]
-    public sealed class MappingCommand : LocalizedEntityCommands
+    public sealed partial class MappingCommand : LocalizedEntityCommands
     {
-        [Dependency] private readonly IResourceManager _resourceMgr = default!;
-        [Dependency] private readonly SharedMapSystem _mapSystem = default!;
-        [Dependency] private readonly MappingSystem _mappingSystem = default!;
-        [Dependency] private readonly MapLoaderSystem _mapLoader = default!;
+        [Dependency] private IResourceManager _resourceMgr = default!;
+        [Dependency] private SharedMapSystem _mapSystem = default!;
+        [Dependency] private MappingSystem _mappingSystem = default!;
+        [Dependency] private MapLoaderSystem _mapLoader = default!;
+        [Dependency] private MapperSyncManager _mapperSync = default!;
 
         public override string Command => "mapping";
 
@@ -43,6 +45,12 @@ namespace Content.Server.Mapping
             if (shell.Player is not { } player)
             {
                 shell.WriteError(Loc.GetString("shell-cannot-run-command-from-server"));
+                return;
+            }
+
+            if (_mapperSync.IsEnabled)
+            {
+                shell.WriteError(Loc.GetString("cmd-mapping-pullmap-error"));
                 return;
             }
 

@@ -16,10 +16,10 @@ namespace Content.Server.Audio;
 
 public sealed partial class ContentAudioSystem : SharedContentAudioSystem
 {
-    [Dependency] private readonly AudioSystem _serverAudio = default!;
-    [Dependency] private readonly IRobustRandom _robustRandom = default!;
-    [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
-    [Dependency] private readonly IConfigurationManager _cfg = default!;
+    [Dependency] private AudioSystem _serverAudio = default!;
+    [Dependency] private IRobustRandom _robustRandom = default!;
+    [Dependency] private IPrototypeManager _prototypeManager = default!;
+    [Dependency] private IConfigurationManager _cfg = default!;
 
     private SoundCollectionPrototype? _lobbyMusicCollection = default!;
     private string[]? _lobbyPlaylist;
@@ -55,7 +55,7 @@ public sealed partial class ContentAudioSystem : SharedContentAudioSystem
         SubscribeLocalEvent<RoundRestartCleanupEvent>(OnRoundCleanup);
         SubscribeLocalEvent<RoundStartingEvent>(OnRoundStart);
         SubscribeLocalEvent<PrototypesReloadedEventArgs>(OnProtoReload);
-        // Sunrise added start - lobby playlist refresh for the fresh post-cleanup lobby.
+        // Sunrise added start - обновляем lobby playlist для свежего лобби после cleanup.
         InitializeSunriseRoundFlowAudio();
         // Sunrise added end
     }
@@ -89,7 +89,7 @@ public sealed partial class ContentAudioSystem : SharedContentAudioSystem
 
     private void OnRoundEnd(RoundEndMessageEvent ev)
     {
-        // Sunrise edit start - discard the old playlist so PlayerJoinLobby cannot resend stale tracks.
+        // Sunrise edit start - сбрасываем старый плейлист, чтобы PlayerJoinLobby не отправил устаревшие tracks.
         // A fresh shuffled playlist is generated after cleanup in the Sunrise round-flow hook.
         HandleSunriseRoundEndLobbyPlaylist();
         // Sunrise edit end
